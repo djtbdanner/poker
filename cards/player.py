@@ -1,5 +1,5 @@
 import uuid
-import evaluation.evaluatorsort
+import evaluation.evaluator
 from deck import Card
 class Hand:
     def __init__(self):    
@@ -12,57 +12,35 @@ class Hand:
             result.append(card.rank+card.suit)
         return result
     
-    # Build all 5 card combinations of the 7 (or whatever number) cards in the player's hand 
-    def getFiveCardCombosForEval(self):
+    # Build all 5 card combinations of the 7  cards in the player's hand
+    # (At this time will not work for numbers in hand other than 7)
+    def get5CardCombosFrom7CardsForEval(self):
         result = []
-        added = len(self.cards) - 5
-        if (added > 2):
-            added = 2
-        for index, _ in enumerate(self.toEvalList()):
-            for nextIndex in range (1, added+2):
-                result.append(self.buildList(index, nextIndex, nextIndex+4))
-            for nextIndex in range (0, added+2):
-                for skipSize in range (1, added+1 ):
-                    result.append(self.buildSkippedList(index, nextIndex, skipSize))
+        cardsInHandCount = len(self.cards)
+        if cardsInHandCount != 7:
+            raise ValueError ("get5CardCombosFrom7CardsForEval should only be called if there are 7 cards in the hand" )
+        
+        evalList = self.toEvalList()
+        # Pick to cards to exclude and build list with rest of them
+        for firstCardindex in range (0, cardsInHandCount):
+            for secondCardIndex in range (firstCardindex+1, cardsInHandCount):
+                fiveCardHand = []
+                for cardIndex in range (0, cardsInHandCount):
+                    if (cardIndex != firstCardindex and cardIndex != secondCardIndex):
+                        fiveCardHand.append(evalList[cardIndex])
+                result.append(fiveCardHand)
         return result
-
-    # Build the list of different combinations of cards for 5 card evaluation
-    # spins through list reducing size to 5
-    # then moving over one and doing it again
-    def buildList(self, initialIndex, a, b):
-        cardsInHand = self.toEvalList()
-        fiveCardHand = []
-        fiveCardHand.append(cardsInHand[initialIndex])
-        for index in range(a, b):
-            cardIndex = initialIndex+index
-            fiveCardHand.append(cardsInHand[self._checkCardIndex(cardIndex)])
-        return fiveCardHand
-    
-    # Builds list skipping one or two fields 
-    def buildSkippedList(self, initialIndex, index, skip):
-        cardsInHand = self.toEvalList()
-        fiveCardHand = []
-        fiveCardHand.append(cardsInHand[initialIndex])
-        for indicator in range(initialIndex+1, initialIndex + index+1):
-            fiveCardHand.append(cardsInHand[self._checkCardIndex(indicator)])
-            
-        start = len(fiveCardHand)+initialIndex
-        for ind in range(start, start+(5-len(fiveCardHand))):
-            cardIndex = ind + skip
-            fiveCardHand.append(cardsInHand[self._checkCardIndex(cardIndex)])
-        return fiveCardHand
-    
-    def _checkCardIndex(self,index):
-        listSize = len(self.toEvalList())
-        if index >= listSize:
-            index = index - listSize
-        return index
     
     # Get the best 5 cards of the hand as a list
     def getBest5CardHand(self):
-        combos = self.getFiveCardCombosForEval()
-        evaluation.evaluatorsort.quickSort(combos)
-        return combos.pop()
+        combos = self.get5CardCombosFrom7CardsForEval()
+        winner = combos[0]
+        for hand in combos:
+            handEval = evaluation.evaluator.compare_hands(hand, winner)
+            if handEval[0] == evaluation.evaluator.LEFT:
+                winner = hand
+        return winner
+
     
     def bestHandAsCards(self):
         bestHand = self.getBest5CardHand()

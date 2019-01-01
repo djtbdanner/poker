@@ -34,9 +34,7 @@ class Table:
         
         for _ in range(cardCount):
             card = self.deck.deal()
-            print('Table got a ' + str(card))
             self.cards.append(card)
-                      
 
     def __init__(self):
         

@@ -1,325 +1,174 @@
 
 from collections import Counter
 '''
-Code swiped from StackOverflow: https://stackoverflow.com/questions/5293405/algorithm-to-determine-the-winner-of-a-texas-holdem-hand/24481308
+Code concept swiped from StackOverflow: https://stackoverflow.com/questions/5293405/algorithm-to-determine-the-winner-of-a-texas-holdem-hand/24481308
 '''
-# gets the most common element from a list
-def Most_Common(lst):
-    data = Counter(lst)
-    return data.most_common(1)[0]
+ROYAL_FLUSH = ['ROYAL FLUSH',10]
+STRAIGHT_FLUSH = ['STRAIGHT FLUSH',9]
+FOUR_OF_A_KIND = ['FOUR OF A KIND',8]
+FULL_HOUSE = ['FULL HOUSE',7]
+FLUSH = ['FLUSH',6]
+STRAIGHT = ['STRAIGHT',5]
+THREE_OF_A_KIND = ['THREE OF A KIND',4]
+TWO_PAIR = ['TWO_PAIR',3]
+PAIR = ['PAIR',2]
+HIGH_CARD = ['HIGH_CARD',1]
+RIGHT = "RIGHT"
+LEFT = "LEFT"
+TIE = "TIE"
+ALL_CARDS = ['2H','3H','4H','5H','6H','7H','8H','9H','10H','JH','QH','KH','AH','11H','12H','13H','14H','2D','3D','4D','5D','6D','7D','8D','9D','10D','JD','QD','KD','AD','11D','12D','13D','14D','2S','3S','4S','5S','6S','7S','8S','9S','10S','JS','QS','KS','AS','11S','12S','13S','14S','2C','3C','4C','5C','6C','7C','8C','9C','10C','JC','QC','KC','AC','11C','12C','13C','14C']
 
-# gets card value from  a hand. converts A to 14,  is_seq function will convert the 14 to a 1 when necessary to evaluate A 2 3 4 5 straights
-def convert_tonums(h, nums = {'T':10, 'J':11, 'Q':12, 'K':13, "A": 14}):
-    for x in range(len(h)):
+#Convert face cards and aces to numeric equivalent
+def _convertRanksToNumeric(hand, nums = {'T':10, 'J':11, 'Q':12, 'K':13, "A": 14}):
+    for x in range(len(hand)):
+        if (hand[x][0]) in nums.keys():
+            hand[x]=(str(nums[hand[x][0]]) + hand[x][1])
+    return hand
 
-        if (h[x][0]) in nums.keys():
-
-            h[x] = str(nums[h[x][0]]) + h[x][1]
-
-    return h
-
-# is royal flush
-# if a hand is a straight and a flush and the lowest value is a 10 then it is a royal flush
-def is_royal(h, hn):
-    if is_seq(h, hn):
-        if is_flush(h):
-            nn = [int(x[:-1]) for x in hn]
-            if min(nn) == 10:
-                return True
-
-    else:
-        return False
-
-
-# converts hand to number values and then evaluates if they are sequential  AKA a straight  
-def is_seq(ho, hn):
-    r = ho[:]
-
-    h = [x[:-1] for x in hn]
-
-
-    h = [int(x) for x in h]
-    h = list(sorted(h))
-    ref = True
-    for x in range(0,len(h)-1):
-        if not h[x]+1 == h[x+1]:
-            ref =  False
-            break
-
-    if ref:
-        return True, r
-
-    aces = [i for i in h if str(i) == "14"]
-    if len(aces) == 1:
-        for x in range(len(h)):
-            if str(h[x]) == "14":
-                h[x] = 1
-
-    h = list(sorted(h))
-    for x in range(0,len(h)-1):
-        if not h[x]+1 == h[x+1]:
-
+def _isListSequential(mylist):
+    for x in range(0,len(mylist)-1):
+        if not mylist[x]+1 == mylist[x+1]:
             return False
-    return True, r
+    return True
 
-# call set() on the suite values of the hand and if it is 1 then they are all the same suit
-def is_flush(h):
-    suits = [x[-1] for x in h]
+def _stripSuitsSetRankToInt(handNumeric):
+    handNumbersOnly = [x[:-1] for x in handNumeric]
+    handIntNumeric = [int(x) for x in handNumbersOnly]
+    return handIntNumeric
+
+def _stripKeyCardsFromHand(aList, values):
+    listCopy = aList.copy()
+    for value in values:
+        listCopy = list(filter(lambda x: x!= value, listCopy))
+    return listCopy
+    
+def _isStraight(handIntNumeric):
+
+    handIntNumeric.sort()
+    if _isListSequential(handIntNumeric):
+        return True
+    ## See if there is A, 2, 3, 4, 5 (in above code ace is considered a 14)
+    if handIntNumeric.count(14) == 1:
+        handCopy = handIntNumeric.copy()
+        for x in range(len(handCopy)):
+            if handCopy[x] == 14:
+                handCopy[x] = 1
+        if max(handCopy) < 6:            
+            handCopy.sort()
+            if _isListSequential(handCopy):
+                return True
+    return False
+
+def _isFlush(hand):
+    suits = [x[-1] for x in hand]
     if len(set(suits)) == 1:
-        return True, h
+        return True
     else:
         return False
 
+def _compare(leftHand, rightHand):
+    '''
+    Compare numeric hand ranks in reverse sorted order... first high wins
+    Will fail if ranks are Strings.
+    '''
+    leftHand, rightHand = list(sorted(leftHand, reverse =True)), list(sorted(rightHand, reverse = True))
+    for i, c in enumerate(leftHand):
+        if rightHand[i] > c:
+            return RIGHT
+        elif rightHand[i] < c:
+            return LEFT
+    return TIE
 
-# if the most common element occurs 4 times then it is a four of a kind
-def is_fourofakind(h):
-    h = [a[:-1] for a in h]
-    i = Most_Common(h)
-    if i[1] == 4:
-        return True, i[0]
+# 
+def _getHandCategory(hand):
+    '''
+    Analyze hand and determine category as Flush, straight, full house, three of a kind, etc.
+    '''
+    handNoSuitesNumericInt = _stripSuitsSetRankToInt(hand)
+    isStraight = _isStraight(handNoSuitesNumericInt)
+    isFlush = _isFlush(hand)
+
+    counterData = Counter(handNoSuitesNumericInt)
+    firstMostCommon = counterData.most_common(1)[0]
+    nextMostCommon = counterData.most_common(2)[-1]
+    keyCards = []
+    
+    if isStraight and isFlush:
+        if min(handNoSuitesNumericInt) == 10:
+            return ROYAL_FLUSH, handNoSuitesNumericInt, handNoSuitesNumericInt
+        return STRAIGHT_FLUSH, handNoSuitesNumericInt, handNoSuitesNumericInt
+
+    elif firstMostCommon[1] == 4:
+        keyCards.append(firstMostCommon[0])
+        return FOUR_OF_A_KIND, keyCards, handNoSuitesNumericInt
+    
+    elif firstMostCommon[1] == 3 and nextMostCommon[1] == 2:
+        keyCards.append(firstMostCommon[0])
+        keyCards.append(nextMostCommon[0])
+        return FULL_HOUSE, keyCards, handNoSuitesNumericInt
+    
+    elif isFlush:
+        return FLUSH, handNoSuitesNumericInt, handNoSuitesNumericInt
+    
+    elif isStraight:
+        return STRAIGHT, handNoSuitesNumericInt, handNoSuitesNumericInt
+    
+    elif firstMostCommon[1] == 3:
+        keyCards.append(firstMostCommon[0])
+        return THREE_OF_A_KIND, keyCards, handNoSuitesNumericInt
+    
+    elif firstMostCommon[1] == 2 and nextMostCommon[1] == 2:
+        keyCards.append(firstMostCommon[0])
+        keyCards.append(nextMostCommon[0])
+        return TWO_PAIR, keyCards, handNoSuitesNumericInt
+    
+    elif firstMostCommon[1] == 2:
+        keyCards.append(firstMostCommon[0])       
+        return PAIR, keyCards, handNoSuitesNumericInt
+    
     else:
-        return False
+        return HIGH_CARD, handNoSuitesNumericInt, handNoSuitesNumericInt
 
+def compare_hands(leftHand,rightHand):
+    '''
+    Compare hands for winner. Gets hand category and returns the winner. 
+    If the category of both hands is the same, compares card values for highest value cards.
+    Returns list: first element is LEFT, RIGHT, TIE, next is category of winning side, next is winning side hand (ties is left hand), next is losing category and hand 
+    '''
+    validate(leftHand)
+    validate(rightHand)
+    leftHandNumeric, rightHandNumeric  = _convertRanksToNumeric(leftHand.copy()), _convertRanksToNumeric(rightHand.copy())
+    leftHandEval, rightHandEval = _getHandCategory(leftHandNumeric), _getHandCategory(rightHandNumeric)
+    leftHandType, rightHandType = leftHandEval[0], rightHandEval[0] # Type of hand
+    leftKeyCards, rightKeyCards = leftHandEval[1], rightHandEval[1] # Key cards as int (pair val, 3 of a kind val, etc.)
+    leftHandCardInts, rightHandCardInts = leftHandEval[2], rightHandEval[2] # The whole hand as int representation of card
 
-# if the most common element occurs 3 times then it is a three of a kind
-def is_threeofakind(h):
-    h = [a[:-1] for a in h]
-    i = Most_Common(h)
-    if i[1] == 3:
-        return True, i[0]
-    else:
-        return False
+    winningHand = RIGHT # default
+    if leftHandType == rightHandType:
+        
+        if leftHandType == FOUR_OF_A_KIND or leftHandType == THREE_OF_A_KIND or leftHandType == TWO_PAIR or leftHandType == PAIR:
+            winningHand = _compare(leftKeyCards, rightKeyCards)
+            if winningHand == TIE:
+                leftHandLeftovers = _stripKeyCardsFromHand(leftHandCardInts, leftKeyCards)
+                rightHandLeftovers = _stripKeyCardsFromHand(rightHandCardInts, rightKeyCards)
+                winningHand = _compare(leftHandLeftovers, rightHandLeftovers)
 
-
-# if the first 2 most common elements have counts of 3 and 2, then it is a full house
-def is_fullhouse(h):
-    h = [a[:-1] for a in h]
-    data = Counter(h)
-    a, b = data.most_common(1)[0], data.most_common(2)[-1]
-    if str(a[1]) == '3' and str(b[1]) == '2':
-        return True, (a, b)
-    return False
-
-# if the first 2 most common elements have counts of 2 and 2 then it is a two pair
-def is_twopair(h):
-    h = [a[:-1] for a in h]
-    data = Counter(h)
-    a, b = data.most_common(1)[0], data.most_common(2)[-1]
-    if str(a[1]) == '2' and str(b[1]) == '2':
-        return True, (a[0], b[0])
-    return False
-
-
-#if the first most common element is 2 then it is a pair
-# DISCLAIMER: this will return true if the hand is a two pair, but this should not be a conflict because is_twopair is always evaluated and returned first 
-def is_pair(h):
-    h = [a[:-1] for a in h]
-    data = Counter(h)
-    a = data.most_common(1)[0]
-
-    if str(a[1]) == '2':
-        return True, (a[0]) 
-    else:
-        return False
-
-#get the high card 
-# def get_high(h, hn):
-#     return list(sorted([int(x[:-1]) for x in hn], reverse =True))[0]
-
-# FOR HIGH CARD or ties, this function compares two hands by ordering the hands from highest to lowest and comparing each card and returning when one is higher then the other
-def compare(xs, ys):
-    xs, ys = list(sorted(xs, reverse =True)), list(sorted(ys, reverse = True))
-
-    for i, c in enumerate(xs):
-        if ys[i] > c:
-            return 'RIGHT'
-        elif ys[i] < c:
-            return 'LEFT'
-
-    return "TIE"
-
-
-# categorized a hand based on previous functions
-def evaluate_hand(h, hn):
-
-    if is_royal(h, hn):
-        return "ROYAL FLUSH", h, 10
-    elif is_seq(h, hn) and is_flush(h) :
-        return "STRAIGHT FLUSH", h, 9 
-    elif is_fourofakind(h):
-        _, fourofakind = is_fourofakind(h)
-        return "FOUR OF A KIND", fourofakind, 8
-    elif is_fullhouse(h):
-        return "FULL HOUSE", h, 7
-    elif is_flush(h):
-        return "FLUSH", h, 6
-    elif is_seq(h, hn):
-        return "STRAIGHT", h, 5
-    elif is_threeofakind(h):
-        _, threeofakind = is_threeofakind(h)
-        return "THREE OF A KIND", threeofakind, 4
-    elif is_twopair(h):
-        _, two_pair = is_twopair(h)
-        return "TWO PAIR", two_pair, 3
-    elif is_pair(h):
-        _, pair = is_pair(h)
-        return "PAIR", pair, 2 
-    else:
-        return "HIGH CARD", h, 1
-
-#this monster function evaluates two hands and also deals with ties and edge cases
-# this probably should be broken up into separate functions but aint no body got time for that
-def compare_hands(h1orig,h2orig):
-    h1 = h1orig.copy()
-    h2 = h2orig.copy()
-    hn1 = convert_tonums(h1) 
-    hn2 = convert_tonums(h2) 
-    one, two = evaluate_hand(h1, hn1), evaluate_hand(h2, hn2)
-    if one[0] == two[0]:
-
-        if one[0] =="STRAIGHT FLUSH":
-
-            sett1, sett2 = hn1, hn2
-            sett1, sett2 = [int(x[:-1]) for x in sett1], [int(x[:-1]) for x in sett2]
-            com = compare(sett1, sett2)
-
-            if com == "TIE":
-                return "none", one[1], two[1]
-            elif com == "RIGHT":
-                return "right", two[0], two[1]
-            else:
-                return "left", one[0], one[1]
-
-        elif one[0] == "TWO PAIR":
-
-            leftover1, leftover2 = is_twopair(h1), is_twopair(h2)
-            twm1, twm2 = max([int(x) for x in list(leftover1[1])]), max([int(x) for x in list(leftover2[1])])
-            if twm1 > twm2:
-                return "left", one[0], one[1]
-            elif twm1 < twm2:
-                return "right", two[0], two[1]
-
-
-            if compare(list(leftover1[1]), list(leftover2[1])) == "TIE":
-                l1 = [x[:-1] for x in h1 if x[:-1] not in leftover1[1]]
-                l2 = [x[:-1] for x in h2 if x[:-1] not in leftover2[1]]
-                if int(l1[0]) == int(l2[0]):
-                    return "none", one[1], two[1]
-                elif int(l1[0]) > int(l2[0]):
-                    return "left", one[0], one[1]
-                else:
-                    return "right", two[0], two[1]
-            elif compare(list(leftover1[1]), list(leftover2[1]))  == "RIGHT":
-                return "right", two[0], two[1]
-            elif  compare(list(leftover1[1]), list(leftover2[1]))  == "LEFT":
-                return "left", one[0], one[1]
-
-        elif one[0] == "PAIR":
-            sh1, sh2 = int(is_pair(h1)[1]), int(is_pair(h2)[1])
-            if sh1 == sh2:
-
-                c1 = [int(x[:-1]) for x in hn1 if not int(sh1) == int(x[:-1])]
-                c2 = [int(x[:-1]) for x in hn2 if not int(sh1) == int(x[:-1])]
-                if compare(c1, c2) == "TIE":
-                    return "none", one[1], two[1]
-                elif compare(c1, c2) == "RIGHT":
-                    return "right", two[0], two[1]
-                else:
-                    return "left", one[0], one[1]
-            elif h1 > h2:
-                return "right", two[0], two[1]
-            else:
-                return "left", one[0], one[1]
-
-        elif one[0] == 'FULL HOUSE':
-
-            fh1, fh2 =  int(is_fullhouse(h1)[1][0][0]), int(is_fullhouse(h2)[1][0][0])
-            if fh1 > fh2:
-                return "left", one[0], one[1]
-            else:
-                return "right", two[0], two[1]
-            
-        elif one[0] == "THREE OF A KIND":
-            sh1, sh2 = int(is_threeofakind(h1)[1]), int(is_threeofakind(h2)[1])
-            if sh1 == sh2:
-
-                c1 = [int(x[:-1]) for x in hn1 if not int(sh1) == int(x[:-1])]
-                c2 = [int(x[:-1]) for x in hn2 if not int(sh1) == int(x[:-1])]
-                if compare(c1, c2) == "TIE":
-                    return "none", one[1], two[1]
-                elif compare(c1, c2) == "RIGHT":
-                    return "right", two[0], two[1]
-                else:
-                    return "left", one[0], one[1]
-            elif h1 > h2:
-                return "right", two[0], two[1]
-            else:
-                return "left", one[0], one[1]
-            
-        elif one[0] == "HIGH CARD":
-            sett1, sett2 = hn1, hn2
-            sett1, sett2 = [int(x[:-1]) for x in sett1], [int(x[:-1]) for x in sett2]
-            com = compare(sett1, sett2)
-            if com == "TIE":
-                return "none", one[1], two[1]
-            elif com == "RIGHT":
-                return "right", two[0], two[1]
-            else:
-                return "left", one[0], one[1]
-
-        elif len(one[1]) < 5:
-            if max(one[1])  == max(two[1]):
-                return "none", one[1], two[1]
-            elif max(one[1]) > max(two[1]):
-                return "left", one[0], one[1]
-            else:
-                return "right", two[0], two[1]
+        elif leftHandEval[0] == FULL_HOUSE:
+            winningHand = _compare(leftKeyCards, rightKeyCards)
+        ## High card, straight flush, flush, straight all will work here
         else:
-            n_one, n_two = hn1, hn2
-            n_one, n_two = [int(x[:-1]) for x in n_one], [int(x[:-1]) for x in n_two]
+            winningHand = _compare(leftHandCardInts, rightHandCardInts)
+    elif leftHandType[1] > rightHandType[1]:
+        winningHand = LEFT
+        
+    if winningHand == LEFT or winningHand == TIE:
+        return winningHand, leftHandEval[0][0], leftHand, rightHandEval[0][0], rightHand
+    else:
+        return winningHand, rightHandEval[0][0], rightHand, leftHandEval[0][0], leftHand
 
-            if max(n_one)  == max(n_two):
-                return "none", one[1], two[1]
-            elif max(n_one) > max(n_two):
-                return "left", one[0], one[1]
-            else:
-                return "right", two[0], two[1]
-    elif one[2] > two[2]:
-        return "left", one[0], one[1]
-    else:
-        return "right", two[0], two[1]
-
-def leftIsGreaterOrEqual(h1,h2):
-    result = compare_hands(h1,h2)
-    if result[0] == 'left' or result[0] == 'none':
-        return True
-    else:
-        return False
-    
-def leftIsLessThanOrEqual(h1,h2):
-    result = compare_hands(h1,h2)
-    if result[0] == 'right' or result[0] == 'none':
-        return True
-    else:
-        return False
-    
-def rightIsGreaterOrEqual(h1,h2):
-    result = compare_hands(h1,h2)
-    if result[0] == 'right' or result[0] == 'none':
-        return True
-    else:
-        return False 
-
-def rightIsLessThanOrEqual(h1,h2):
-    result = compare_hands(h1,h2)
-    if result[0] == 'left' or result[0] == 'none':
-        return True
-    else:
-        return False   
-    
-def isEqual(h1,h2):
-    result = compare_hands(h1,h2)
-    if result[0] == 'none':
-        return True
-    else:
-        return False     
+def validate(hand):
+    if len(hand) != 5:
+        raise ValueError("Number of cards in hand must be 5 for poker.")
+    for card in hand:
+        if card not in ALL_CARDS:
+            raise ValueError(card + " is not a known card from a poker deck.")

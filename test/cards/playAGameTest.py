@@ -1,15 +1,14 @@
 import unittest
-
 from deck import Deck
 from table import Table
-import evaluation.evaluator
 import testFunctions
+import evaluation.evaluator
+
 
 class PlayAHand(unittest.TestCase):
     def test_playAGame(self):
         table = Table()
-        table.players = testFunctions.buildPlayers(20)
-#         print("players added ")
+        table.players = testFunctions.buildPlayers(23)
         
         deck = Deck()
         deck.shuffle()  
@@ -37,7 +36,7 @@ class PlayAHand(unittest.TestCase):
         for player in table.players:
             player.hand.cards.extend(table.cards)
         
-
+        # set the best 5 cards of 7 for player
         for player in table.players:
             player.showHand()   
             player.hand.cards = player.hand.bestHandAsCards()
@@ -46,24 +45,28 @@ class PlayAHand(unittest.TestCase):
         winnerList = [table.players[0]]
         for player in table.players:
             if player not in winnerList:
-                 handA = player.hand.toEvalList()
-                 handB = winnerList[0].hand.toEvalList()
-                 if evaluation.evaluator.leftIsGreaterOrEqual(handA, handB):
-                    if evaluation.evaluator.isEqual(handA, handB):
-                        winnerList.append(player)
-                    else:
-                        winnerList.clear()
-                        winnerList.append(player)
-        
+                leftHand = player.hand.toEvalList()
+                currentWinnerHand = winnerList[0].hand.toEvalList()
+                result = evaluation.evaluator.compare_hands(leftHand, currentWinnerHand)
+                print(result)
+                if evaluation.evaluator.LEFT == result[0]:
+                    winnerList.clear()
+                    winnerList.append(player)
+                elif evaluation.evaluator.TIE == result[0]:
+                    winnerList.append(player)
+#                  if evaluation.evaluator.leftIsGreaterOrEqual(handA, handB):
+#                     if evaluation.evaluator.isEqual(handA, handB):
+#                         winnerList.append(player)
+#                     else:
+#                         winnerList.clear()
+#                         winnerList.append(player)
+#         
         
         print("-------------- " + str(len(winnerList)) + " winner(s)! ------------" )
         for player in winnerList:
             print("Winner: " + player.name)
             print(player.showHand())
-            
 
-
-                        
 
 if __name__ == '__main__':
     unittest.main()

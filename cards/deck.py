@@ -3,7 +3,7 @@ suits = ('H', 'D', 'S', 'C')
 suitValues = {'H':'Hearts', 'D':'Diamonds', 'S':'Spades', 'C':'Clubs'}
 suitfonts = {'H':'♥', 'D':'♦', 'S':'♠', 'C':'♣'}
 ranks = ('2', '3','4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14')
-rankValues = {'2':'Two', '3':'Three', '4':'Four', '5':'Five', '6':'Six', '7':'Seven', '8':'Eight', '9':'Nine', '10':'Ten', '11':'Jack', '12':'Queen', '13':'King', '14':'Ace'}
+rankValues = {'2':'Two', '3':'Three', '4':'Four', '5':'Five', '6':'Six', '7':'Seven', '8':'Eight', '9':'Nine', '10':'Ten', 'J':'Jack', 'Q':'Queen', 'K':'King', 'A':'Ace','11':'Jack', '12':'Queen', '13':'King', '14':'Ace'}
 
 ### Card
 class Card:
@@ -14,6 +14,9 @@ class Card:
         
     def __str__(self):
         return rankValues[self.rank] + ' of ' + suitValues[self.suit]
+    
+    def cardForList(self):
+        return self.rank + self.suit
     @staticmethod
     def stringToCard(s):
         if len(s) == 3:
@@ -41,6 +44,8 @@ class Deck:
         random.shuffle(self.cards)
         
     def deal(self):
+        if len(self.cards) < 1:
+            raise ValueError ("The deck is empty, no more cards can be dealt.")
         single_card = self.cards.pop()
         return single_card
             
@@ -50,3 +55,10 @@ class Deck:
 # for x in range(0, 52):
 #     card = deck.deal()
 #     print("Card# %d" % (x+1) + " - " + str(card) +  " -  " + str(rankValues[card.rank])+ ' of ' +suitfonts[card.suit])
+
+# deck = Deck()
+# s = ""
+# for card in deck.cards:
+#     s = s + "'" + card.cardForList() + "',"
+#     print(card.cardForList())
+# print(s)
