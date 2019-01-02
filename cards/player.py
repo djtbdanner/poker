@@ -20,17 +20,17 @@ class Hand:
         if cardsInHandCount != 7:
             raise ValueError ("get5CardCombosFrom7CardsForEval should only be called if there are 7 cards in the hand" )
         
-        evalList = self.toEvalList()
+        cardList = self.toEvalList()
         # Pick to cards to exclude and build list with rest of them
         for firstCardindex in range (0, cardsInHandCount):
             for secondCardIndex in range (firstCardindex+1, cardsInHandCount):
                 fiveCardHand = []
                 for cardIndex in range (0, cardsInHandCount):
                     if (cardIndex != firstCardindex and cardIndex != secondCardIndex):
-                        fiveCardHand.append(evalList[cardIndex])
+                        fiveCardHand.append(cardList[cardIndex])
                 result.append(fiveCardHand)
         return result
-    
+
     # Get the best 5 cards of the hand as a list
     def getBest5CardHand(self):
         combos = self.get5CardCombosFrom7CardsForEval()

@@ -217,21 +217,21 @@ class TestEvaluator(unittest.TestCase):
         left = ['10S', '9S', '8S', '7S', 'JS']
         right = ['10H', '9H', '8H', '7H', '6H'] 
         self.evaluateAndValidate(left, right, evaluation.evaluator.LEFT)
-
+ 
         ## Straight Flush vs 4 of a kind
         left = ['10S', '9S', '8S', '7S', 'JS']
         right = ['10H', '10D', '10S', '10C', 'JH'] 
         self.evaluateAndValidate(left, right, evaluation.evaluator.LEFT)
-        
+         
         ## 4 of a kind variants
         left = ['JH', 'JD', 'JS', 'JC', 'QH']
         right = ['10H', '10D', '10S', '10C', 'QH']
         self.evaluateAndValidate(left, right, evaluation.evaluator.LEFT)
-        
+         
         left = ['JH', 'JD', 'JS', 'JC', 'QH']
         right = ['JH', 'JD', 'JS', 'JC', 'QH']
         self.evaluateAndValidate(left, right, evaluation.evaluator.TIE)
-
+ 
         left = ['JH', 'JD', 'JS', 'JC', 'QH']
         right = ['JH', 'JD', 'JS', 'JC', '5H']
         self.evaluateAndValidate(left, right, evaluation.evaluator.LEFT)
@@ -266,6 +266,10 @@ class TestEvaluator(unittest.TestCase):
         left = ['JH', '10D', '9S', '8C', 'QH']
         right = ['JH', '10C', '9H', '8D', 'QS']
         self.evaluateAndValidate(left, right, evaluation.evaluator.TIE)
+        
+        left = ['JH', '10D', '9S', '8C', 'KH']# NOT A STRAIGHT
+        right = ['JH', '10C', '9H', '8D', 'QS']
+        self.evaluateAndValidate(left, right, evaluation.evaluator.RIGHT)
         
         ## Three of a kind Variants
         left = ['10H', '10D', '10S', '8C', 'QH']
@@ -322,11 +326,16 @@ class TestEvaluator(unittest.TestCase):
         left = ['2H', '3D', '4S', '5H', '2D']
         right = ['AH', 'AD', 'JS', '8H', '7H']
         self.evaluateAndValidate(left, right, evaluation.evaluator.RIGHT)
+
+        left = ['2H', 'KD', '7S', 'QH', '10D']
+        right = ['10H', 'QD', '7S', 'KH', '2D']
+        self.evaluateAndValidate(left, right, evaluation.evaluator.TIE)
        
     def evaluateAndValidate(self, left, right, winner):
         print(left, right)
         handEval = evaluation.evaluator.compare_hands(left, right)
         print (handEval)
+        
         self.assertEquals(winner, handEval[0])
         
     def test_best_of_seven_two_of_a_kind (self):
