@@ -2,7 +2,7 @@ import random
 suits = ('H', 'D', 'S', 'C')
 suitValues = {'H':'Hearts', 'D':'Diamonds', 'S':'Spades', 'C':'Clubs'}
 suitfonts = {'H':'♥', 'D':'♦', 'S':'♠', 'C':'♣'}
-ranks = ('2', '3','4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14')
+ranks = ('2', '3','4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A')
 rankValues = {'2':'Two', '3':'Three', '4':'Four', '5':'Five', '6':'Six', '7':'Seven', '8':'Eight', '9':'Nine', '10':'Ten', 'J':'Jack', 'Q':'Queen', 'K':'King', 'A':'Ace','11':'Jack', '12':'Queen', '13':'King', '14':'Ace'}
 
 ### Card

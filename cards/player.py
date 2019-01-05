@@ -1,6 +1,7 @@
 import uuid
 import evaluation.evaluator
 from deck import Card
+
 class Hand:
     def __init__(self):    
         self.cards = []
@@ -50,19 +51,35 @@ class Hand:
         return result
     
 class Player:
-    def __init__(self, name="A Player with no name", chips=100, dealer=False):
+    def __init__(self, name="A Player with no name", chips=100, dealer=False, folded = False, currentBet = 0):
         self.hand = Hand()
         self.name = name  
         self.id=uuid.uuid4()
         self.chips = chips
         self.dealer = dealer
-        self.position = 1
+        self.folded = folded
+        self.currentBet = currentBet
+        self.currentAction = PlayerAction.NONE
 
     def showHand(self):
-        print("\n"+ self.name + ":")
-        myCards = '\t'
-        for card in self.hand.cards[:-1]:
-            myCards = myCards + str(card)
-            myCards = myCards + ", "
-        myCards = myCards + str(self.hand.cards[-1])
-        print(myCards)
+        myCards = self.name + ' : '
+        if len(self.hand.cards) == 0:
+            myCards += " No cards"
+        else: 
+            for card in self.hand.cards[:-1]:
+                myCards  += str(card)
+                myCards  +=  ", "
+            myCards  += str(self.hand.cards[-1])
+        return myCards
+
+    
+    def __str__(self):
+        return self.name +  ' has ' + str(self.chips) + ' chips'
+        
+    
+    
+from enum import Enum
+class PlayerAction(Enum):
+    NONE = 'none'
+    CALL_CHECK_RAISE = 'call, check or raise'
+    FOLD = 'fold'
