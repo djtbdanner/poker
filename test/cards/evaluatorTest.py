@@ -2,6 +2,8 @@ import unittest
 from deck import Deck, Card
 from player import Hand, Player
 import evaluation.evaluator
+import evaluation.processor
+
 import datetime
 
 class TestEvaluator(unittest.TestCase):
@@ -38,7 +40,7 @@ class TestEvaluator(unittest.TestCase):
         hand.cards.append(card)
         card = Card('5','D')
         hand.cards.append(card)
-        wins = hand.getBest5CardHand()
+        wins = evaluation.processor.getBest5CardHand(hand)
         self.assertTrue('AC' in wins)
         self.assertTrue('AD' in wins)
         self.assertTrue('AS' in wins)
@@ -63,7 +65,7 @@ class TestEvaluator(unittest.TestCase):
         card = Card('2','H')
         hand.cards.append(card)
 
-        wins = hand.getBest5CardHand()
+        wins = evaluation.processor.getBest5CardHand(hand)
         self.assertEqual(len(wins), 5)
         self.assertTrue('14H' in wins)
         self.assertTrue('13H' in wins)
@@ -89,7 +91,7 @@ class TestEvaluator(unittest.TestCase):
         card = Card('2','D')
         hand.cards.append(card)
 
-        wins = hand.getBest5CardHand()
+        wins = evaluation.processor.getBest5CardHand(hand)
         self.assertEqual(len(wins), 5)
         self.assertTrue('14H' in wins)
         self.assertTrue('13H' in wins)
@@ -115,7 +117,7 @@ class TestEvaluator(unittest.TestCase):
         card = Card('5','D')
         hand.cards.append(card)
 
-        wins = hand.getBest5CardHand()
+        wins = evaluation.processor.getBest5CardHand(hand)
         self.assertEqual(len(wins), 5)
         self.assertTrue('2H' in wins)
         self.assertTrue('2D' in wins)
@@ -141,7 +143,7 @@ class TestEvaluator(unittest.TestCase):
         card = Card('10','D')
         hand.cards.append(card)
 
-        wins = hand.getBest5CardHand()
+        wins = evaluation.processor.getBest5CardHand(hand)
         self.assertEqual(len(wins), 5)
         self.assertTrue('14H' in wins)
         self.assertTrue('2H' in wins)
@@ -359,7 +361,7 @@ class TestEvaluator(unittest.TestCase):
         hand.cards.append(card)
   
         print(hand.toEvalList())
-        lst = hand.get5CardCombosFrom7CardsForEval()
+        lst = evaluation.processor.get5CardCombosFrom7CardsForEval(hand)
         print("there were " + str(len(lst)) + " variations found")
         lst.sort()
         print(lst)

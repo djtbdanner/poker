@@ -57,6 +57,8 @@ class Table:
     def playerCheck(self, playerIndex):
         player = self.players[playerIndex]
         logging.info(' {0} checks'.format(player.name))
+        if player.currentBet < self.currentBet:
+            raise ValueError ('Cannot check without meeting the current bet')
         if player.folded:
             logging.warn(player.name + " asked to check, but is folded, bet will not be made")
             return
@@ -68,12 +70,13 @@ class Table:
         logging.info(' {0} folds, player has a total of {1} chips bet this round'.format(player.name, player.currentBet))
 
     def prepareForNextHand(self):
-        # move dealer and reset folded
+        '''
+        Next dealer, reset pot, shuffle a new deck reset players
+        '''
         indexOfDealer = 0
         for playerIndex, player in enumerate(self.players):
-            logging.info("Resetting player " + player.name)
-            player.folded = False
             player.hand.cards = []
+            player.folded = False
             if player.dealer:
                 indexOfDealer = playerIndex + 1
         
@@ -85,7 +88,9 @@ class Table:
         self.cards = []
         
     def prepareForNextRound(self):
-        # move dealer and reset folded
+        '''
+        Reset players for the next round of betting
+        '''        
         for player in (self.players):
             player.currentBet = 0
             player.currentAction = PlayerAction.NONE
@@ -95,11 +100,13 @@ class Table:
     def addPlayer(self, player):
         for existingPlayer in self.players:
             if existingPlayer.id == player.id:
-                logging.warn(" Attempted to add player ["+player.name+ "] already at table.")
                 raise ValueError(" Cannot add player to table as player is already at table.")
         self.players.append(player)
         
     def isRoundComplete(self):
+        '''
+        Check to see that all bets are completed for the round of betting
+        '''
         for player in self.players:
             if player.currentAction == PlayerAction.NONE and not player.folded:
                 return False
@@ -115,13 +122,14 @@ class Table:
     def setBlinds(self):
         '''
         Set blinds or bets before table cards or betting. 
-        Must have dealer set before this is called.
+        Must have dealer set before this is called. Dealer will be index [0]
         '''
         self.playerBet(1, int(self.blind/2))
         self.playerBet(2, self.blind)
         # since this is blind, give the player a chance to call
         self.players[1].currentAction = PlayerAction.NONE
         self.players[2].currentAction = PlayerAction.NONE
+        logging.info(' Blinds set, {0} is low at {1} chip(s) and {2} high with {3} chips '.format( self.players[1].name, int(self.blind/2), self.players[2].name, self.blind))
 
     def dealRound(self):
         numberOfPlayers = len(self.players)

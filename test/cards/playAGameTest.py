@@ -1,13 +1,13 @@
 import unittest
 from table import Table
 import testFunctions
-import evaluation.evaluator
+import evaluation.processor
 import logging
 from player import PlayerAction
 
 class PlayAGame(unittest.TestCase):
     
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.ERROR)
     def test_playAGame(self):
         table = Table()
 #         table.players = testFunctions.buildPlayers(23)
@@ -34,22 +34,24 @@ def seekBets(firstPlayerIndex, table):
             if player.currentAction == PlayerAction.CALL_CHECK_RAISE and player.currentBet == table.currentBet:
                 print(' {0} called and no raises - no bet for this player'.format(player.name))
                 continue
-            
-            inputString = player.showHand()
+            inputString = '===============================\n'
+            inputString += player.showHand()
             inputString += '\n'
             inputString += table.showHand()
             inputString += '\n'
+            inputString += 'Pot is {} chip(s).'.format(table.pot)
+            inputString += '\n'
             if table.currentBet == 0:
-                inputString += '{0}, {1} chips to you (you have already bet {2}); check (c), raise (amount), or fold (f)? : '.format(player.name, table.currentBet, player.currentBet)
+                inputString += '{0} chips to you (you have already bet {1}); check (c), raise (amount), or fold (f)? : '.format(table.currentBet, player.currentBet)
                 val = input (inputString)
             else :
-                inputString += ' {0}, {1} chips to you (you have already bet {2} so a call would add {3} chip(s) for this round); call (c), raise (amount), or fold (f)? : '.format(player.name, table.currentBet, player.currentBet, (table.currentBet-player.currentBet))
+                inputString += '{0} chips to you (you have already bet {1} so a call would add {2} chip(s) for this round); call (c), raise (amount), or fold (f)? : '.format(table.currentBet, player.currentBet, (table.currentBet-player.currentBet))
                 val = input (inputString)
             
             
             if val != 'c' and val != 'f':
                 try:
-                    bet = int(val)
+                    int(val)
                 except:
                     logging.info ("Looks like {0} is not a number or 'c' or 'f'. It will be set to the default of 'c' for check or call".format(val))
                     val = 'c'
@@ -61,28 +63,13 @@ def seekBets(firstPlayerIndex, table):
             else:
                 table.playerBet(index, int(val))
             
-def getWinners(table):
-    winnerList = []
-    winnerList.append(table.players[0])
-    for player in table.players:
-        if player not in winnerList and not player.folded:
-            leftHand = player.hand.toEvalList()
-            currentWinnerHand = winnerList[0].hand.toEvalList()
-            result = evaluation.evaluator.compare_hands(leftHand, currentWinnerHand)
-            logging.info(" Evaluation result for winning hand: " + str(result))
-            if evaluation.evaluator.LEFT == result[0]:
-                winnerList.clear()
-                winnerList.append(player)
-            elif evaluation.evaluator.TIE == result[0]:
-                winnerList.append(player)
-    return winnerList
-
 def playAHand(table):
         
         for player in table.players:
-            logging.info(player)
+            print(player)
     
         table.setBlinds()
+        print('---- blinds set')
 
         table.dealRound()
         table.dealRound()
@@ -90,31 +77,29 @@ def playAHand(table):
         seekBets(3, table)
         table.prepareForNextRound()
 
-        print("--- flop")
+        print('\n--- flop ---\n ')
         table.dealToTable(3)
         seekBets(1, table)
         table.prepareForNextRound()
-        print("--- turn")
+        print ('\n--- turn ---\n')
         table.dealToTable(1)
         seekBets(1, table)
         table.prepareForNextRound()
-        print("--- river")
+        print('\n--- river ---\n')
         table.dealToTable(1)
         seekBets(1, table)
         table.prepareForNextRound()
         
         for player in table.players:
             player.hand.cards.extend(table.cards)
-        # set the best 5 cards of 7 for player
-        for player in table.players:
             player.showHand()   
-            player.hand.cards = player.hand.bestHandAsCards()
+            player.hand = evaluation.processor.getBest5CardsAsHand(player.hand)
             player.showHand()
 
-        winnerList = getWinners(table)
-        logging.info("-------------- " + str(len(winnerList)) + " winner(s)! ------------" )
+        winnerList =  evaluation.processor.getWinners(table.players)
+        print("\n-------------- " + str(len(winnerList)) + " winner(s)! ------------\n" )
         for player in winnerList:
-            logging.info("Winner: " + player.name)
+            print("Winner: " + player.name)
             logging.info(player.showHand())
             player.chips = player.chips + int(table.pot/len(winnerList))
 

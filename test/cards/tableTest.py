@@ -2,6 +2,7 @@ import unittest
 from table import Table
 from player import Player, PlayerAction
 import testFunctions
+import evaluation.processor
 import logging
 
 class TestDealerSet(unittest.TestCase):
@@ -60,8 +61,8 @@ class TestDealerSet(unittest.TestCase):
 		self.assertEqual(pokerTable.players[2].chips, player2Chips -2)
 		self.assertEqual(pokerTable.players[1].currentBet, 1)
 		self.assertEqual(pokerTable.players[2].currentBet, 2)
-		self.assertEqual(pokerTable.players[1].currentAction, PlayerAction.CALL)
-		self.assertEqual(pokerTable.players[2].currentAction, PlayerAction.CALL)
+		self.assertEqual(pokerTable.players[1].currentAction, PlayerAction.NONE)
+		self.assertEqual(pokerTable.players[2].currentAction, PlayerAction.NONE)
 		self.assertEqual(pokerTable.pot, 3)
 		self.assertEqual(pokerTable.currentBet, 2)
 		
@@ -120,3 +121,73 @@ class TestDealerSet(unittest.TestCase):
 		pokerTable.playerFold(4)
 		
 		self.assertTrue(pokerTable.isRoundComplete())		
+		
+	def test_play_a_hand (self):
+		pokerTable = Table()
+		pokerTable.addPlayers(testFunctions.buildPlayers(5))
+		pokerTable.setDealerPosition(0) ### Player 1 can be dealer
+		pokerTable.blind = 2
+
+		pokerTable.setBlinds()
+		print('---- blinds set')
+		
+		pokerTable.dealRound()
+		pokerTable.dealRound()
+		
+		
+		while not pokerTable.isRoundComplete():
+			### always 3 because dealer is 0, low blind is 1 and high is 2
+			for index in range(3, len(pokerTable.players) + 3):
+				if index >= len(pokerTable.players):
+					index = index - len(pokerTable.players)
+				pokerTable.playerBet(index, pokerTable.currentBet - pokerTable.players[index].currentBet)
+
+		pokerTable.prepareForNextRound()
+
+		print('\n--- flop ---\n ')
+		pokerTable.dealToTable(3)
+
+		while not pokerTable.isRoundComplete():
+			### always 1 because dealer is 0
+			for index in range(1, len(pokerTable.players) + 1):
+				if index >= len(pokerTable.players):
+					index = index - len(pokerTable.players)
+				pokerTable.playerCheck(index)
+		pokerTable.prepareForNextRound()
+
+		print ('\n--- turn ---\n')
+		pokerTable.dealToTable(1)
+		while not pokerTable.isRoundComplete():
+			### always 1 because dealer is 0
+			for index in range(1, len(pokerTable.players) + 1):
+				if index >= len(pokerTable.players):
+					index = index - len(pokerTable.players)
+				pokerTable.playerCheck(index)
+		pokerTable.prepareForNextRound()
+	
+		print('\n--- river ---\n')
+		pokerTable.dealToTable(1)
+		while not pokerTable.isRoundComplete():
+			### always 1 because dealer is 0
+			for index in range(1, len(pokerTable.players) + 1):
+				if index >= len(pokerTable.players):
+					index = index - len(pokerTable.players)
+				pokerTable.playerCheck(index)
+		
+		for player in pokerTable.players:
+			player.hand.cards.extend(pokerTable.cards)
+			print(player.showHand())   
+			player.hand = evaluation.processor.getBest5CardsAsHand(player.hand)
+			print(player.showHand())
+			
+			
+		winners = evaluation.processor.getWinners(pokerTable.players)
+		print ('We have {0} winner{x}! '.format( len(winners), x = '' if len(winners) == 1 else 's' ))
+		for player in winners:
+			player.chips += int(pokerTable.pot/len(winners))
+			print ("WINNER: {} wins, winning hand {}".format(player, player.showHand()))
+			
+			
+		for player in pokerTable.players:
+			print(player)
+		
