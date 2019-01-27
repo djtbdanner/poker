@@ -9,23 +9,23 @@ import json
 
 class TestJSON(unittest.TestCase):
     
-#     def test_hand(self):
-#         hand = buildHand(7)
-#         print(hand)
-#         
-#         jsondata = json.dumps(hand,default=jsob.convert_to_dict,indent=4, sort_keys=True)
-#         print(jsondata)
-#         newHand = json.loads(jsondata, object_hook=jsob.dict_to_obj)
-#         
-#         logging.debug("comparing " + str (hand.cards[0]) + " and "+ str(newHand.cards[0]))
-#         self.assertEqual(hand.cards[0], newHand.cards[0])
-#         self.assertEqual(hand.cards[1], newHand.cards[1])
-#         self.assertEqual(hand.cards[2], newHand.cards[2])
-#         self.assertEqual(hand.cards[3], newHand.cards[3])
-#         self.assertEqual(hand.cards[4], newHand.cards[4])
-#         self.assertEqual(hand.cards[5], newHand.cards[5])
-#         self.assertEqual(hand.cards[6], newHand.cards[6])
-#         self.assertNotEqual(hand.cards[0], newHand.cards[4])
+    def test_hand(self):
+        hand = buildHand(7)
+        print(hand)
+         
+        jsondata = json.dumps(hand,default=jsob.convert_to_dict,indent=4, sort_keys=True)
+        print(jsondata)
+        newHand = json.loads(jsondata, object_hook=jsob.dict_to_obj)
+         
+        logging.debug("comparing " + str (hand.cards[0]) + " and "+ str(newHand.cards[0]))
+        self.assertEqual(hand.cards[0], newHand.cards[0])
+        self.assertEqual(hand.cards[1], newHand.cards[1])
+        self.assertEqual(hand.cards[2], newHand.cards[2])
+        self.assertEqual(hand.cards[3], newHand.cards[3])
+        self.assertEqual(hand.cards[4], newHand.cards[4])
+        self.assertEqual(hand.cards[5], newHand.cards[5])
+        self.assertEqual(hand.cards[6], newHand.cards[6])
+        self.assertNotEqual(hand.cards[0], newHand.cards[4])
 #  
 # 
     def test_player(self):
