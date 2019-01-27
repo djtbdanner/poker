@@ -25,11 +25,14 @@ class Card:
             return Card(rank, suit)
         return Card(s[0], s[1])
 
+    def __eq__(self, other):
+        return self.rank == other.rank and self.suit == other.suit
+
 #### Deck of cards
 class Deck:
 
-    def __init__(self):
-        self.cards = []  # start with an empty list
+    def __init__(self, cards = None):
+        self.cards = cards if cards is not None else []
         for suit in suits:
             for rank in ranks:
                 self.cards.append(Card(rank,suit))  # build Card objects and add them to the list

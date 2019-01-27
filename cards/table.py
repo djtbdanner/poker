@@ -5,7 +5,19 @@ from player import PlayerAction
 import logging
 
 class Table:
-    
+    def __init__(self, players=None, deck = None, pot = 0,  cards=None, tableId=None, blind = 2, currentBet = 0):
+        self.players =  players if players is not None else []
+        if deck is not None:
+            self.deck = deck 
+        else:
+            self.deck = Deck()
+            self.deck.shuffle()
+        self.pot = pot
+        self.cards = cards if cards is not None else []
+        self.tableId = tableId if tableId is not None else str(uuid.uuid4())
+        self.blind = blind
+        self.currentBet = currentBet
+
     def setDealerAtRandom(self):
         playerIndex = randint(0, len(self.players) -1)
         logging.debug(' Player index: {0} ({1}) randomly selected to be dealer.'.format( playerIndex, self.players[playerIndex].name))
@@ -99,7 +111,7 @@ class Table:
 
     def addPlayer(self, player):
         for existingPlayer in self.players:
-            if existingPlayer.id == player.id:
+            if existingPlayer.playerId == player.playerId:
                 raise ValueError(" Cannot add player to table as player is already at table.")
         self.players.append(player)
         
@@ -148,17 +160,3 @@ class Table:
                 myCards  +=  ", "
             myCards  +=  str(self.cards[-1])
         return myCards
-
-    def __init__(self, pot = 0, blind = 2):
-        
-        self.players = []
-        self.id = uuid.uuid4()
-        self.pot = pot
-        self.cards = []
-        self.blind = blind
-        self.currentBet = blind
-        deck = Deck()
-        deck.shuffle()  
-        self.deck = deck 
-        
-        

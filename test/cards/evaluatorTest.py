@@ -21,7 +21,7 @@ class TestEvaluator(unittest.TestCase):
             player.hand.cards.append(deck.deal())
              
         player.showHand()   
-        print(player.hand.getBest5CardHand())
+        print(evaluation.processor.getBest5CardHand(player.hand))
         
     def test_best_of_seven_3_of_a_kind (self):
 #         pass
@@ -371,7 +371,7 @@ class TestEvaluator(unittest.TestCase):
 
         print(lst)
         print(lst)
-        wins = hand.getBest5CardHand()
+        wins = evaluation.processor.getBest5CardHand(hand)
         self.assertEqual(len(wins), 5)
         self.assertTrue('14S' in wins)
         self.assertTrue('14D' in wins)

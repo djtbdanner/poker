@@ -1,5 +1,6 @@
 import unittest
 from deck import Deck, Card
+import logging
 
 class TestDeck(unittest.TestCase):
     def test_52_cards_are_unique(self):
@@ -8,6 +9,7 @@ class TestDeck(unittest.TestCase):
         listOfCards = []
         for _ in range(0, 52):
             card = deck.deal()
+            logging.debug(card)
             self.assertFalse(card in listOfCards, "Duplicate card found in deck!!!" + str(card))
             listOfCards.append(card)
  

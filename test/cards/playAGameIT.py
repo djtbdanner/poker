@@ -1,9 +1,8 @@
 import unittest
 from table import Table
-import testFunctions
 import evaluation.processor
 import logging
-from player import PlayerAction
+from player import Player, PlayerAction
 
 class PlayAGame(unittest.TestCase):
     
@@ -11,7 +10,7 @@ class PlayAGame(unittest.TestCase):
     def test_playAGame(self):
         table = Table()
 #         table.players = testFunctions.buildPlayers(23)
-        table.players = testFunctions.buildPlayers(5)
+        table.players = buildPlayers(5)
 
         table.setDealerAtRandom()  
 
@@ -79,6 +78,7 @@ def playAHand(table):
 
         print('\n--- flop ---\n ')
         table.dealToTable(3)
+
         seekBets(1, table)
         table.prepareForNextRound()
         print ('\n--- turn ---\n')
@@ -106,4 +106,8 @@ def playAHand(table):
 if __name__ == '__main__':
     unittest.main()
 
-
+def buildPlayers(count):
+    players = []
+    for indx in range (1, count + 1):
+        players.append(Player("player " + str(indx)))
+    return players
