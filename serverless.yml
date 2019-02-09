@@ -11,7 +11,7 @@
 #
 # Happy Coding!
 
-service: hello # NOTE: update this with your service name
+service: poker # NOTE: update this with your service name
 
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
@@ -45,28 +45,42 @@ provider:
 #  environment:
 #    variable1: value1
 
+
+
 # you can add packaging information here
-#package:
-#  include:
-#    - include-me.py
-#    - include-me-dir/**
-#  exclude:
-#    - exclude-me.py
-#    - exclude-me-dir/**
+package:
+  include:
+    - cards/**
+    - db/**
+    - evaluation/**
+  exclude:
+    - .gitignore
+    - .project
+    - .README.md
+    - serverless.yml
+    - test/**
 
 functions:
-  # hello:
-    # handler: handler.hello
-    # events:
-      # - http:
-          # path: hello
-          # method: get
+  hello:
+    handler: handler.hello
+    events:
+     - http:
+         path: hello
+         method: get
   getNextCard:
     handler: handler.getNextCard
     events:
       - http:
           path: getNextCard
           method: get
+  getATable:
+    handler: handler.getATable
+    package:
+    events:
+      - http:
+          path: getATable
+          method: get
+
 
           
 #    The following are a few example events you can configure

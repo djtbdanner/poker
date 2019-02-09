@@ -1,7 +1,6 @@
 # Distribution / packaging
 .Python
-../.project
-../.pydevproject
+
 env/
 build/
 develop-eggs/
@@ -14,11 +13,14 @@ lib64/
 parts/
 sdist/
 var/
-*.settings/
+
 __pycache__/
 *.egg-info/
 .installed.cfg
 *.egg
+.idea/
+
+.serverless
 
 # Serverless directories
 .serverless
