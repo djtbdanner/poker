@@ -44,3 +44,6 @@ def deleteATable(name):
     except ddbClient.exceptions.ResourceNotFoundException:
         logging.warn ('Table "'+name+'" does not exist ')
         pass
+    
+createATable("PokerPlayer", 'playerId')
+createATable("PokerTable", 'pokerTableId')
