@@ -1,5 +1,7 @@
 ### This os environ here is to fix a bug on boto3
 import os
+from boto3.dynamodb.conditions import Key, Attr
+from handler import createOrFindPlayer
 os.environ["TZ"] = "UTC"  
 import boto3
 import logging
@@ -7,12 +9,17 @@ from player import Player
 from table import Table
 import json
 import db.jsonobj as jsob
+import platform
 
 playerTableName="PokerPlayer"
 tableTableName="PokerTable"
 
-dynamodb = boto3.resource('dynamodb', region_name='us-west-2', endpoint_url="http://localhost:8000")
-ddbClient = boto3.client('dynamodb', endpoint_url='http://localhost:8000')
+if (platform.system() == "Windows"):
+    dynamodb = boto3.resource('dynamodb', region_name='us-east-1', endpoint_url="http://localhost:8000")
+    ddbClient = boto3.client('dynamodb', endpoint_url='http://localhost:8000')
+else:
+    dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+    ddbClient = boto3.client('dynamodb')
 
 playerTable = dynamodb.Table(playerTableName)
 pokerTable = dynamodb.Table(tableTableName)
@@ -121,4 +128,28 @@ def deleteTable(table):
     except Exception as error:
         logging.exception("Unable to delete Table." + str(error))
 
+def findATableForPlayer(player):
+    try:
+        #TODO - see if there is a more elegant way to search tables
+        logging.debug("finding a table for player :" + str(player))
+        fe = Attr('pokerTable').exists()
+        pe = "pokerTable"
+        response = pokerTable.scan(
+           FilterExpression=fe,
+           ProjectionExpression=pe
 
+        )
+        if 'Items' in response:
+            for i in response['Items']:
+                table = json.loads(i["pokerTable"], object_hook=jsob.dict_to_obj)
+                if (len(table.players) < 10):
+                    break
+        else:
+            table = getOrCreateSavedTable('x')
+
+        table.addPlayer(player)
+        updateTable(table)
+        return table
+    except Exception as error:
+        logging.exception("Unable to find table." + str(error))
+        

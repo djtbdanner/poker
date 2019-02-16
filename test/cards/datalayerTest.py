@@ -75,8 +75,25 @@ class TestDataLayer(unittest.TestCase):
         self.assertEqual(tableII.players[2].name, tableIII.players[2].name)
         self.assertEqual(tableII.players[3].name, tableIII.players[3].name)
         self.assertEqual(tableII.players[4].name, tableIII.players[4].name)
+        self.assertEqual(tableII.statusId, tableIII.statusId)
                 
         datalayer.deleteTable(tableII)
+        
+    def testFindATableForPlayer(self):
+        players = buildPlayers(5)
+        table = datalayer.findATableForPlayer(players[0])
+
+        self.assertTrue(players[0] in table.players)
+        table = datalayer.findATableForPlayer(players[1])
+
+        self.assertTrue(players[1] in table.players)
+        self.assertEqual(2, len(table.players))
+        table = datalayer.findATableForPlayer(players[2])
+
+        self.assertTrue(players[2] in table.players)
+        self.assertEqual(3, len(table.players))
+                
+        datalayer.deleteTable(table)
 
 def random_string(length):
     return ''.join(random.choice(string.ascii_letters) for _ in range(length))

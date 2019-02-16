@@ -3,9 +3,14 @@ import os
 os.environ["TZ"] = "UTC"  
 import boto3
 import logging
+import platform
 
-dynamodb = boto3.resource('dynamodb', region_name='us-west-2', endpoint_url="http://localhost:8000")
-ddbClient = boto3.client('dynamodb', endpoint_url='http://localhost:8000')
+if (platform.system() == "Windows"):
+    dynamodb = boto3.resource('dynamodb', region_name='us-east-1', endpoint_url="http://localhost:8000")
+    ddbClient = boto3.client('dynamodb', endpoint_url='http://localhost:8000')
+else:
+    dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+    ddbClient = boto3.client('dynamodb')
 
 def createATable(tableName, tableId):
     logging.debug("Attempting to create table: " + tableName)

@@ -20,6 +20,19 @@ service: poker # NOTE: update this with your service name
 provider:
   name: aws
   runtime: python3.7
+  
+
+# iamRoleStatements: # permissions for all of your functions can be set here
+  # - Effect: Allow
+    # Action: # Gives permission to DynamoDB tables in a specific region
+      # - "dynamodb:DescribeTable"
+      # - "dynamodb:Query"
+      # - "dynamodb:Scan"
+      # - "dynamodb:GetItem"
+      # - "dynamodb:PutItem"
+      # - "dynamodb:UpdateItem"
+      # - "dynamodb:DeleteItem"
+    # Resource: "arn:aws:dynamodb:us-east-1:*:*"
 
 # you can overwrite defaults here
 #  stage: dev
@@ -67,19 +80,38 @@ functions:
      - http:
          path: hello
          method: get
-  getNextCard:
-    handler: handler.getNextCard
+  createOrFindPlayer:
+    handler: handler.createOrFindPlayer
     events:
-      - http:
-          path: getNextCard
-          method: get
-  getATable:
-    handler: handler.getATable
-    package:
+     - http:
+         path: createOrFindPlayer
+         method: post
+  findTable:
+    handler: handler.findTable
     events:
-      - http:
-          path: getATable
-          method: get
+     - http:
+         path: createOrFindPlayer
+         method: post
+  # getNextCard:
+    # handler: handler.getNextCard
+    # events:
+      # - http:
+          # path: getNextCard
+          # method: get
+  # getATable:
+    # handler: handler.getATable
+    # package:
+    # events:
+      # - http:
+          # path: getATable
+          # method: get
+  # createTableTest:
+    # handler: handler.createTableTest
+    # package:
+    # events:
+      # - http:
+          # path: createTableTest
+          # method: get
 
 
           

@@ -5,7 +5,7 @@ from player import PlayerAction
 import logging
 
 class Table:
-    def __init__(self, players=None, deck = None, pot = 0,  cards=None, tableId=None, blind = 2, currentBet = 0):
+    def __init__(self, players=None, deck = None, pot = 0,  cards=None, tableId=None, blind = 2, currentBet = 0, statusId=None):
         self.players =  players if players is not None else []
         if deck is not None:
             self.deck = deck 
@@ -17,11 +17,14 @@ class Table:
         self.tableId = tableId if tableId is not None else str(uuid.uuid4())
         self.blind = blind
         self.currentBet = currentBet
-
+        ## Any table change should update the status id
+        self.statusId = statusId if statusId is not None else 0
+        
     def setDealerAtRandom(self):
         playerIndex = randint(0, len(self.players) -1)
         logging.debug(' Player index: {0} ({1}) randomly selected to be dealer.'.format( playerIndex, self.players[playerIndex].name))
         self.setDealerPosition(playerIndex)
+        self.statusId=self.statusId+1
 
     def setDealerPosition(self, playerIndxForDealer):
         '''
@@ -41,17 +44,20 @@ class Table:
             resetPlayers.append(player)
             logging.debug('player ' + self.players[nextPlayer].name + ' is position ' + str(index))
         self.players = resetPlayers
+        self.statusId=self.statusId+1
 
     def dealPlayer(self, playerIndex):
         player = self.players[playerIndex]
         card = self.deck.deal()
         logging.debug(' {0} received a {1}'.format(player.name, card))
         player.hand.cards.append(card)
+        self.statusId=self.statusId+1
 
     def dealToTable(self, cardCount):
         for _ in range(cardCount):
             card = self.deck.deal()
             self.cards.append(card)
+        self.statusId=self.statusId+1
             
     def playerBet(self, playerIndex, chips):
         player = self.players[playerIndex]
@@ -65,6 +71,7 @@ class Table:
         self.pot = self.pot + chips
         self.currentBet = player.currentBet
         logging.info(' Sets table pot to {0} and current call amount for this round to {1}'.format(self.pot,self.currentBet))
+        self.statusId=self.statusId+1
         
     def playerCheck(self, playerIndex):
         player = self.players[playerIndex]
@@ -75,11 +82,13 @@ class Table:
             logging.warn(player.name + " asked to check, but is folded, bet will not be made")
             return
         player.currentAction = PlayerAction.CALL_CHECK_RAISE
+        self.statusId=self.statusId+1
         
     def playerFold(self, playerIndex):
         player = self.players[playerIndex]
         player.folded = True
         logging.info(' {0} folds, player has a total of {1} chips bet this round'.format(player.name, player.currentBet))
+        self.statusId=self.statusId+1
 
     def prepareForNextHand(self):
         '''
@@ -98,6 +107,7 @@ class Table:
         self.deck.shuffle()
         self.pot = 0
         self.cards = []
+        self.statusId=self.statusId+1
         
     def prepareForNextRound(self):
         '''
@@ -107,6 +117,7 @@ class Table:
             player.currentBet = 0
             player.currentAction = PlayerAction.NONE
         self.currentBet = 0
+        self.statusId=self.statusId+1
 
 
     def addPlayer(self, player):
@@ -114,6 +125,7 @@ class Table:
             if existingPlayer.playerId == player.playerId:
                 raise ValueError(" Cannot add player to table as player is already at table.")
         self.players.append(player)
+        self.statusId=self.statusId+1
         
     def isRoundComplete(self):
         '''
@@ -125,7 +137,6 @@ class Table:
             if player.currentAction == PlayerAction.CALL_CHECK_RAISE and player.currentBet < self.currentBet and not player.folded:
                 return False
         return True
-
 
     def addPlayers (self, players):
         for player in players:
@@ -149,6 +160,7 @@ class Table:
             if playerIndex >= numberOfPlayers:
                 playerIndex = 0
             self.dealPlayer(playerIndex)
+        self.statusId=self.statusId+1
             
     def showHand(self):
         myCards = "Table : "

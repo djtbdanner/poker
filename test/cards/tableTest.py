@@ -10,7 +10,9 @@ class TestDealerSet(unittest.TestCase):
 
 	def test_SetDealerSetsAlls(self):
 		pokerTable = Table()
+		tableStatus = pokerTable.statusId
 		pokerTable.addPlayers(buildPlayers(5))
+		self.assertFalse(tableStatus == pokerTable.statusId)		
 		
 		playerIds = []
 		for player in pokerTable.players:
@@ -26,10 +28,12 @@ class TestDealerSet(unittest.TestCase):
 					logging.info(" Player IDs, not yet dealer: " + str(id))
 	
 		logging.info(" All players selected as dealer")
-		self.assertFalse(len(playerIds) > 0)		
+		self.assertFalse(len(playerIds) > 0)
+		self.assertFalse(tableStatus == pokerTable.statusId)		
 
 	def test_AddSamePlayerDoesNotAdd (self):
 		pokerTable = Table()
+		tableStatus = pokerTable.statusId
 		pokerTable.addPlayers(buildPlayers(5))
 		
 		self.assertEqual(5, len(pokerTable.players))
@@ -47,6 +51,7 @@ class TestDealerSet(unittest.TestCase):
 		
 		for player in pokerTable.players:
 			print(player.name)
+		self.assertFalse(tableStatus == pokerTable.statusId)	
 			
 	def test_setBlinds_and_reset (self):
 		pokerTable = Table()
