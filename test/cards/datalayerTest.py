@@ -80,20 +80,20 @@ class TestDataLayer(unittest.TestCase):
         datalayer.deleteTable(tableII)
         
     def testFindATableForPlayer(self):
-        players = buildPlayers(5)
+        players = buildPlayers(15)
         table = datalayer.findATableForPlayer(players[0])
+        firstTableId = table.tableId
+        
+        for index in range(1,10):
+            table = datalayer.findATableForPlayer(players[index])
+            self.assertTrue(players[index] in table.players)
+            self.assertEquals(table.tableId, firstTableId)
 
-        self.assertTrue(players[0] in table.players)
-        table = datalayer.findATableForPlayer(players[1])
-
-        self.assertTrue(players[1] in table.players)
-        self.assertEqual(2, len(table.players))
-        table = datalayer.findATableForPlayer(players[2])
-
-        self.assertTrue(players[2] in table.players)
-        self.assertEqual(3, len(table.players))
-                
+        table2 = datalayer.findATableForPlayer(players[11])
+        self.assertNotEquals(table2.tableId, firstTableId)
+        
         datalayer.deleteTable(table)
+        datalayer.deleteTable(table2)
 
 def random_string(length):
     return ''.join(random.choice(string.ascii_letters) for _ in range(length))

@@ -6,65 +6,70 @@ sys.path.append("evaluation/")
 import db.jsonobj as jsob
 import db.datalayer as datalayer
 import logging
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
 
 def hello(event, context):
+    
+    logger.debug("Hello called " + str(event) + " " + str(context))
     body = {
          "message": "Go Serverless v1.0! Your function executed successfully!",
          "input": event
      }
 
-    response = {
-         "statusCode": 200,
-         "body": json.dumps(body)
-     }
-
-    return response
+    return createResponse(200, body)
 
 
 def createOrFindPlayer(event, context):
+    logger.debug("createOrFindPlayer called " + str(event) + " " + str(context))
     try:
         playerId = event['playerId']
         playerName = event['name']
-        logging.debug("Looking for player: " + playerId + " , "+ playerName)
+        logger.debug("Looking for player: " + playerId + " , "+ playerName)
         player = datalayer.getOrCreateSavedPlayer(playerId, playerName)
         status = 200
         body = json.dumps(player,default=jsob.convert_to_dict,indent=4, sort_keys=True)
-
+ 
     except Exception as error:
-        logging.exception("Unable to find or create player." + str(error))
+        logger.exception("Unable to find or create player." + str(error))
         status = 500
         body = str(error)
  
-    response = {
-        "statusCode": status,
-        "body": body
-    }
-    return response
+    return createResponse(status, body)
 
 def findTable(event, context):
+    logger.debug("findTable called " + str(event))
     try:
+        logger.debug("Hey Dude, gonna try anbd get the id : " )
         playerId = event['playerId']
-        playerName = event['name']
+        logger.debug("PlayerID : " + str(playerId))
         player = datalayer.getOrCreateSavedPlayer(playerId)
-        logging.debug("Looking for table for player: " + str(player))
-        
-        
-        player = datalayer.getOrCreateSavedPlayer(playerId, playerName)
+        logger.debug("Looking for table for player: " + str(player))
+        player = datalayer.getOrCreateSavedPlayer(playerId)
         table = datalayer.findATableForPlayer(player)
         status = 200
+        table.deck.cards = []
         body = json.dumps(table,default=jsob.convert_to_dict,indent=4, sort_keys=True)
 
     except Exception as error:
-        logging.exception("Unable to find or create player." + str(error))
+        logger.exception("Unable to find or create player." + str(error))
         status = 500
         body = str(error)
- 
+
+    return createResponse(status, body)
+
+def createResponse(status, body):
     response = {
         "statusCode": status,
-        "body": body
+        "body": body,
+        "headers": {
+               'Access-Control-Allow-Origin': '*'
+        }
     }
-    return response
-
+    return response     
+    
+    
+       
 # def getNextCard(event, context):
 #     deck = Deck()
 #     deck.shuffle()
@@ -93,7 +98,7 @@ def findTable(event, context):
 # 
 # def createTableTest(event, context):
 #     try:
-#         logging.debug("Attempting to create a table")
+#         logger.debug("Attempting to create a table")
 # #         tableCreateDelete.createATable('test', 'pokerTableId')
 # #         tableCreateDelete.createATable('PokerPlayer', 'playerId')
 # #         tableCreateDelete.createATable('PokerTable', 'pokerTableId')
@@ -107,7 +112,7 @@ def findTable(event, context):
 #         
 #         
 #     except Exception as error:
-#         logging.exception("Unable to process table." + str(error))
+#         logger.exception("Unable to process table." + str(error))
 # 
 #     response = {
 #         "statusCode": 200,

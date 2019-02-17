@@ -90,7 +90,7 @@ functions:
     handler: handler.findTable
     events:
      - http:
-         path: createOrFindPlayer
+         path: findTable
          method: post
   # getNextCard:
     # handler: handler.getNextCard

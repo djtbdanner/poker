@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+<meta content="utf-8" http-equiv="encoding">
+<script>
+
+
+	var url = 'https://qhe15uceld.execute-api.us-east-1.amazonaws.com/dev/';
+
+    function callAPI(method, onLoadFunction, params) {
+        const http = new XMLHttpRequest();
+        http.open('POST',url+method, true);
+        http.setRequestHeader('Content-type', 'application/json');
+        http.send(JSON.stringify(params));
+        http.onload = function(){
+			onLoadFunction(http)
+		};
+
+		http.onerror = function() {
+            alert("Unfortunately, we've experienced an error." + http.responseText);
+        }
+    }
+	
+	function processCreateOrFindTableResult(http) {
+		//alert(http.responseText)
+		var o = JSON.parse(http.responseText);
+		var table = JSON.parse(o.body);
+		var names = "";
+		var count = 1;
+		table.players.forEach(function(player){
+			//player = JSON.parse(playerJSON);
+			//alert(player)
+			//alert(player.name);
+			names += count + " " + player.name + ": ";
+			count++;
+		})
+		alert(names);
+    }
+	
+	function processcreateOrFindPlayerResult(http) {
+		var o = JSON.parse(http.responseText);
+		var o2 = JSON.parse(o.body);
+		document.getElementById("playerId").value = o2.playerId;
+		document.getElementById("playerName").value = o2.name;
+    }	
+
+	function callCreateOrFindPlayer(){
+		playerId = document.getElementById("playerId").value;
+		name = document.getElementById("playerName").value;
+		
+		if (playerId.length < 1){
+			playerId = 'x'
+		}
+		var params = {
+            playerId: playerId,
+            name: name
+        };
+		callAPI('createOrFindPlayer', processcreateOrFindPlayerResult, params);
+	}	
+	
+	function callCreateOrFindTable(){
+		playerId = document.getElementById("playerId").value;
+		if (playerId.length < 1){
+			playerId = 'x'
+		}
+		var params = {
+            playerId: playerId
+		};
+		
+		callAPI('findTable', processCreateOrFindTableResult, params);
+	}	
+	
+	function clearIdAndName(){
+		document.getElementById("playerId").value = "";
+		document.getElementById("playerName").value = "";
+	}
+</script>
+</head>
+<body>
+
+Links
+<br/>
+  <a href="https://qhe15uceld.execute-api.us-east-1.amazonaws.com/dev/hello" target="_blank"> hello </a><br/>
+  <a href="#" onclick="callCreateOrFindPlayer()"> create or find player</a><br/>
+  <a href="#" onclick="callCreateOrFindTable()"> findTable</a><br/>
+  <a href="#" onclick="clearIdAndName()"> clear ID and Name</a><br/>
+  <br/>
+  <br/>
+  Player ID: <input type="text" id = "playerId" name="playerId"><br>
+  <br/>
+  Player Name:  <input type="text" id="playerName" name="playerName"><br>
+  
+  <!-- <a href="https://zduj40k8w8.execute-api.us-east-1.amazonaws.com/dev/getNextCard" target="_blank"> get card</a><br/> -->
+  <!-- <a href="https://zduj40k8w8.execute-api.us-east-1.amazonaws.com/dev/getATable" target="_blank"> get table </a><br/>  -->
+  <!-- <a href="https://zduj40k8w8.execute-api.us-east-1.amazonaws.com/dev/createATableTest" target="_blank"> test create table </a><br/>  -->
+
+</body>
+</html>
+
+
+
+
+  
