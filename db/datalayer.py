@@ -159,4 +159,5 @@ def findATableForPlayer(player):
         return table
     except Exception as error:
         logger.exception("Unable to find table." + str(error))
+        raise
         

@@ -4,7 +4,10 @@ os.environ["TZ"] = "UTC"
 import boto3
 import logging
 import platform
-
+'''
+This class is used only to create tables when starting up or whenever necessary for testing
+or updates.
+'''
 if (platform.system() == "Windows"):
     dynamodb = boto3.resource('dynamodb', region_name='us-east-1', endpoint_url="http://localhost:8000")
     ddbClient = boto3.client('dynamodb', endpoint_url='http://localhost:8000')

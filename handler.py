@@ -7,7 +7,7 @@ import db.jsonobj as jsob
 import db.datalayer as datalayer
 import logging
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 def hello(event, context):
     
@@ -21,7 +21,7 @@ def hello(event, context):
 
 
 def createOrFindPlayer(event, context):
-    logger.debug("createOrFindPlayer called " + str(event) + " " + str(context))
+    logger.info("createOrFindPlayer called " + str(event) + " " + str(context))
     try:
         playerId = event['playerId']
         playerName = event['name']
@@ -38,13 +38,10 @@ def createOrFindPlayer(event, context):
     return createResponse(status, body)
 
 def findTable(event, context):
-    logger.debug("findTable called " + str(event))
+    logger.info("findTable called " + str(event))
     try:
-        logger.debug("Hey Dude, gonna try anbd get the id : " )
         playerId = event['playerId']
         logger.debug("PlayerID : " + str(playerId))
-        player = datalayer.getOrCreateSavedPlayer(playerId)
-        logger.debug("Looking for table for player: " + str(player))
         player = datalayer.getOrCreateSavedPlayer(playerId)
         table = datalayer.findATableForPlayer(player)
         status = 200

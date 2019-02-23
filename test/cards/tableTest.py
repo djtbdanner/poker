@@ -51,7 +51,17 @@ class TestDealerSet(unittest.TestCase):
 		
 		for player in pokerTable.players:
 			print(player.name)
-		self.assertFalse(tableStatus == pokerTable.statusId)	
+		self.assertFalse(tableStatus == pokerTable.statusId)
+		
+		count = 6;
+		for player in pokerTable.players:
+			count = count-1
+			pokerTable.removePlayer(player)
+			self.assertEqual(count, len(pokerTable.players), "Didn't remove player")
+		
+		# remove player not on table does not cause fail
+		pokerTable.removePlayer(Player("This player isn't on the table"))
+
 			
 	def test_setBlinds_and_reset (self):
 		pokerTable = Table()
@@ -193,7 +203,6 @@ class TestDealerSet(unittest.TestCase):
 			
 		for player in pokerTable.players:
 			print(player)
-
 		
 def buildPlayers(count):
 	players = []

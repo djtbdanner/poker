@@ -23,15 +23,11 @@
     }
 	
 	function processCreateOrFindTableResult(http) {
-		//alert(http.responseText)
 		var o = JSON.parse(http.responseText);
 		var table = JSON.parse(o.body);
 		var names = "";
 		var count = 1;
 		table.players.forEach(function(player){
-			//player = JSON.parse(playerJSON);
-			//alert(player)
-			//alert(player.name);
 			names += count + " " + player.name + ": ";
 			count++;
 		})

@@ -33,9 +33,10 @@ class Deck:
 
     def __init__(self, cards = None):
         self.cards = cards if cards is not None else []
-        for suit in suits:
-            for rank in ranks:
-                self.cards.append(Card(rank,suit))  # build Card objects and add them to the list
+        if (len(self.cards)<1):
+            for suit in suits:
+                for rank in ranks:
+                    self.cards.append(Card(rank,suit))  # build Card objects and add them to the list
     
     def __str__(self):
         deck_comp = ''  # start with an empty string

@@ -5,7 +5,9 @@ from deck import Deck
 from table import Table
 import db.jsonobj as jsob
 import json
-
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 class TestJSON(unittest.TestCase):
     
@@ -50,15 +52,26 @@ class TestJSON(unittest.TestCase):
         table.pot = 25
         table.cards.append(table.deck.deal());
         table.blind = 4
+        originalDeck = table.deck
         jsondata = json.dumps(table,default=jsob.convert_to_dict,indent=4, sort_keys=True)
-        print(jsondata)
+#         logger.info("Dumped JSON: " + jsondata)
         tableII = json.loads(jsondata, object_hook=jsob.dict_to_obj)
-        
+
         self.assertEqual(table.players[0].name, tableII.players[0].name)
         self.assertEqual(table.cards[0],  tableII.cards[0])
         self.assertEqual(table.pot, tableII.pot)
         self.assertEqual(table.currentBet, tableII.currentBet)
-
+        self.assertEqual(len(originalDeck.cards), len(tableII.deck.cards), "Needs to be the same number of cards in deck")
+        tableII.addPlayer(Player("Test Player 5", buildHand(7), 'unique_id5', 250, False, True, 11, 'z'))
+        self.assertEqual(len(tableII.players), 5, "Should be 5 players")
+        
+        tableII.removePlayerById('unique_id5')
+        self.assertEqual(len(tableII.players), 4, "Should be 4 players")
+        
+        jsondata = json.dumps(tableII,default=jsob.convert_to_dict,indent=4, sort_keys=True)
+        tableIII = json.loads(jsondata, object_hook=jsob.dict_to_obj)
+        
+        self.assertEqual(len(tableIII.deck.cards), len(originalDeck.cards), "There have been changes in the deck")
 
 def buildHand(howMany):
     deck = Deck()

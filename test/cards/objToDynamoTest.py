@@ -9,33 +9,30 @@ import db.tableCreateDelete
 from player import Player, Hand, PlayerAction
 from deck import Deck
 from table import Table
-
 import logging
-
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 class TestJSONtoDynamoDb(unittest.TestCase):
-    
-    logging.basicConfig(level=logging.INFO)
-    
-    
     def setUp(self):
         pass
-#         logging.info("Making sure table is TestPlayerTable and TestPokerTable are created. ")
-#         db.tableCreateDelete.createATable('TestPlayerTable', 'playerId')
-#         db.tableCreateDelete.createATable('TestPokerTable', 'tableId')
-#         logging.info("Both TestPokerPlayer and TestPokerTable are created. ")
+        logger.info("Making sure table is TestPlayerTable and TestPokerTable are created. ")
+        db.tableCreateDelete.createATable('TestPlayerTable', 'playerId')
+        db.tableCreateDelete.createATable('TestPokerTable', 'tableId')
+        logger.info("Both TestPokerPlayer and TestPokerTable are created. ")
 
     def tearDown(self):
         pass
-#         logging.info("Making sure table is TestPokerPlayer and TestPokerTable are deleted. ")
+#         logger.info("Making sure table is TestPokerPlayer and TestPokerTable are deleted. ")
 #         db.tableCreateDelete.deleteATable('TestPlayerTable')
 #         db.tableCreateDelete.deleteATable('TestPokerTable')
-#         logging.info("Both TestPokerPlayer and TestPokerTable are deleted. ")
+#         logger.info("Both TestPokerPlayer and TestPokerTable are deleted. ")
 # 
     def test_player(self):
         player = Player("Test Player", buildHand(7))
         jsondata = json.dumps(player,default=jsob.convert_to_dict,indent=None, sort_keys=False)
-        logging.info("From Object: " + jsondata)
+        logger.info("From Object: " + jsondata)
 #         
 #         db.tableCreateDelete.createATable(dbTableName, 'playerId')
         playerTable = db.tableCreateDelete.dynamodb.Table("TestPlayerTable")
@@ -52,7 +49,7 @@ class TestJSONtoDynamoDb(unittest.TestCase):
                 }
         )
         playerJsonFromDB = response['Item']['player']
-        logging.info("From Database: " + playerJsonFromDB)
+        logger.info("From Database: " + playerJsonFromDB)
         playerII = json.loads(playerJsonFromDB, object_hook=jsob.dict_to_obj)
          
         print(playerII)
@@ -74,9 +71,10 @@ class TestJSONtoDynamoDb(unittest.TestCase):
         table.pot = 25
         table.cards.append(table.deck.deal());
         table.blind = 4
+        originalDeck = table.deck;
         jsondata = json.dumps(table,default=jsob.convert_to_dict,indent=None, sort_keys=False)
-        logging.info("From Object: " + jsondata)
-
+        logger.info("From Object: " + jsondata)
+        
         playerTable = db.tableCreateDelete.dynamodb.Table("TestPokerTable")
         playerTable.put_item(
             Item={
@@ -90,15 +88,37 @@ class TestJSONtoDynamoDb(unittest.TestCase):
                 'tableId': table.tableId
                 }
         )
-        playerJsonFromDB = response['Item']['table']
-        logging.info("From Database: " + playerJsonFromDB)
 
-        tableII = json.loads(playerJsonFromDB, object_hook=jsob.dict_to_obj)
+        tableJSONFromDB = response['Item']['table']
+        logger.info("From Database: " + tableJSONFromDB)
+
+        tableII = json.loads(tableJSONFromDB, object_hook=jsob.dict_to_obj)
          
         self.assertEqual(table.players[0].name, tableII.players[0].name)
         self.assertEqual(table.cards[0],  tableII.cards[0])
         self.assertEqual(table.pot, tableII.pot)
         self.assertEqual(table.currentBet, tableII.currentBet)
+        self.assertEqual(len(originalDeck.cards), len(tableII.deck.cards), "Needs to be the same number of cards in deck")
+        
+        playerTable.put_item(
+            Item={
+                 'tableId': table.tableId,
+                 'table': jsondata
+             }
+        )
+#         
+        response = playerTable.get_item(        
+            Key={
+                'tableId': table.tableId
+                }
+        )
+        
+        tableJSONFromDB = response['Item']['table']
+        logger.info("From Database: " + tableJSONFromDB)
+
+        tableIII = json.loads(tableJSONFromDB, object_hook=jsob.dict_to_obj)
+        self.assertEqual(51, len(tableIII.deck.cards))
+        
 
 
 def buildHand(howMany):

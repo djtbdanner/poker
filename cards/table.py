@@ -3,6 +3,7 @@ from random import randint
 from deck import Deck
 from player import PlayerAction
 import logging
+logger = logging.getLogger()
 
 class Table:
     def __init__(self, players=None, deck = None, pot = 0,  cards=None, tableId=None, blind = 2, currentBet = 0, statusId=None):
@@ -17,12 +18,13 @@ class Table:
         self.tableId = tableId if tableId is not None else str(uuid.uuid4())
         self.blind = blind
         self.currentBet = currentBet
-        ## Any table change should update the status id
+        ## Any table change should update the status id this can then be used to determine if there has been a change on the table
+        
         self.statusId = statusId if statusId is not None else 0
         
     def setDealerAtRandom(self):
         playerIndex = randint(0, len(self.players) -1)
-        logging.debug(' Player index: {0} ({1}) randomly selected to be dealer.'.format( playerIndex, self.players[playerIndex].name))
+        logger.debug(' Player index: {0} ({1}) randomly selected to be dealer.'.format( playerIndex, self.players[playerIndex].name))
         self.setDealerPosition(playerIndex)
         self.statusId=self.statusId+1
 
@@ -31,7 +33,7 @@ class Table:
         Set the position of the dealer. Player that is dealer will be in index 0 of the array of players.
         '''
         self.players[playerIndxForDealer].dealer = True
-        logging.info(' {0} is dealer.'.format( self.players[playerIndxForDealer].name))
+        logger.info(' {0} is dealer.'.format( self.players[playerIndxForDealer].name))
 
         resetPlayers = []
         ### set dealer to index 0
@@ -42,14 +44,14 @@ class Table:
             player = self.players[nextPlayer]
             player.dealer = playerIndxForDealer==nextPlayer
             resetPlayers.append(player)
-            logging.debug('player ' + self.players[nextPlayer].name + ' is position ' + str(index))
+            logger.debug('player ' + self.players[nextPlayer].name + ' is position ' + str(index))
         self.players = resetPlayers
         self.statusId=self.statusId+1
 
     def dealPlayer(self, playerIndex):
         player = self.players[playerIndex]
         card = self.deck.deal()
-        logging.debug(' {0} received a {1}'.format(player.name, card))
+        logger.debug(' {0} received a {1}'.format(player.name, card))
         player.hand.cards.append(card)
         self.statusId=self.statusId+1
 
@@ -62,24 +64,24 @@ class Table:
     def playerBet(self, playerIndex, chips):
         player = self.players[playerIndex]
         player.currentBet =  player.currentBet + chips
-        logging.info(' {0} bets {1} chip(s), for a total of {2} this round'.format(player.name, chips, player.currentBet))
+        logger.info(' {0} bets {1} chip(s), for a total of {2} this round'.format(player.name, chips, player.currentBet))
         if player.folded:
-            logging.warn(player.name + " asked to bet, but is folded, bet will not be made")
+            logger.warn(player.name + " asked to bet, but is folded, bet will not be made")
             return
         player.chips = player.chips - chips
         player.currentAction = PlayerAction.CALL_CHECK_RAISE
         self.pot = self.pot + chips
         self.currentBet = player.currentBet
-        logging.info(' Sets table pot to {0} and current call amount for this round to {1}'.format(self.pot,self.currentBet))
+        logger.info(' Sets table pot to {0} and current call amount for this round to {1}'.format(self.pot,self.currentBet))
         self.statusId=self.statusId+1
         
     def playerCheck(self, playerIndex):
         player = self.players[playerIndex]
-        logging.info(' {0} checks'.format(player.name))
+        logger.info(' {0} checks'.format(player.name))
         if player.currentBet < self.currentBet:
             raise ValueError ('Cannot check without meeting the current bet')
         if player.folded:
-            logging.warn(player.name + " asked to check, but is folded, bet will not be made")
+            logger.warn(player.name + " asked to check, but is folded, bet will not be made")
             return
         player.currentAction = PlayerAction.CALL_CHECK_RAISE
         self.statusId=self.statusId+1
@@ -87,7 +89,7 @@ class Table:
     def playerFold(self, playerIndex):
         player = self.players[playerIndex]
         player.folded = True
-        logging.info(' {0} folds, player has a total of {1} chips bet this round'.format(player.name, player.currentBet))
+        logger.info(' {0} folds, player has a total of {1} chips bet this round'.format(player.name, player.currentBet))
         self.statusId=self.statusId+1
 
     def prepareForNextHand(self):
@@ -141,6 +143,15 @@ class Table:
     def addPlayers (self, players):
         for player in players:
             self.addPlayer(player)
+            
+    def removePlayer(self, player):
+        if player in self.players:
+            self.players.remove(player)
+            
+    def removePlayerById(self, playerId):
+        for player in self.players:
+            if player.playerId == playerId:
+                self.players.remove(player)
 
     def setBlinds(self):
         '''
@@ -152,7 +163,7 @@ class Table:
         # since this is blind, give the player a chance to call
         self.players[1].currentAction = PlayerAction.NONE
         self.players[2].currentAction = PlayerAction.NONE
-        logging.info(' Blinds set, {0} is low at {1} chip(s) and {2} high with {3} chips '.format( self.players[1].name, int(self.blind/2), self.players[2].name, self.blind))
+        logger.info(' Blinds set, {0} is low at {1} chip(s) and {2} high with {3} chips '.format( self.players[1].name, int(self.blind/2), self.players[2].name, self.blind))
 
     def dealRound(self):
         numberOfPlayers = len(self.players)
