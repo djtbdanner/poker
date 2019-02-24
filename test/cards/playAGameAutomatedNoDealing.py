@@ -3,10 +3,11 @@ from table import Table
 import evaluation.processor
 import logging
 from player import Player, PlayerAction
+logging.basicConfig(level=logging.DEBUG)
 
 class PlayAGame(unittest.TestCase):
     
-    logging.basicConfig(level=logging.DEBUG)
+
 
     def test_playAGame(self):
         table = Table()
@@ -45,14 +46,8 @@ def playAHand(table):
         table.dealToTable(1)
         seekBets(1, table)
         table.prepareForNextRound()
-        
-        for player in table.players:
-            player.hand.cards.extend(table.cards)
-            player.showHand()   
-            player.hand = evaluation.processor.getBest5CardsAsHand(player.hand)
-            player.showHand()
 
-        winnerList =  evaluation.processor.getWinners(table.players)
+        winnerList =  evaluation.processor.getWinners(table)
         logging.debug("\n-------------- " + str(len(winnerList)) + " winner(s)! ------------\n" )
         for player in winnerList:
             logging.debug("Winner: {0} ".format(player.showHand()))
@@ -60,9 +55,6 @@ def playAHand(table):
             
         for player in table.players:
             logging.debug(' {0} has {1} chips '.format(player.name, player.chips))
-
-if __name__ == '__main__':
-    unittest.main()
 
 def seekBets(firstPlayerIndex, table):
         
@@ -83,15 +75,18 @@ def seekBets(firstPlayerIndex, table):
             val = 'c'
             if val == 'c':
                 logging.debug(' {0} calls or checks {1}'.format(player.name, table.currentBet - player.currentBet))
-                table.playerBet(index, table.currentBet - player.currentBet)
+                table.playerBetOrCallByIndex(index, table.currentBet - player.currentBet)
             elif val == 'f':
-                table.playerFold(index)
+                table.playerFoldByIndex(index)
             else:
-                table.playerBet(index, int(val))
-
+                table.playerBetOrCallByIndex(index, int(val))
 
 def buildPlayers(count):
     players = []
     for indx in range (1, count + 1):
         players.append(Player("player " + str(indx)))
     return players
+
+if __name__ == '__main__':
+    unittest.main()
+

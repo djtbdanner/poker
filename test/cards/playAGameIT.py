@@ -56,11 +56,11 @@ def seekBets(firstPlayerIndex, table):
                     val = 'c'
 
             if val == 'c':
-                table.playerBet(index, table.currentBet - player.currentBet)
+                table.playerBetOrCallByIndex(index, table.currentBet - player.currentBet)
             elif val == 'f':
-                table.playerFold(index)
+                table.playerFoldByIndex(index)
             else:
-                table.playerBet(index, int(val))
+                table.playerBetOrCallByIndex(index, int(val))
             
 def playAHand(table):
         
@@ -90,13 +90,7 @@ def playAHand(table):
         seekBets(1, table)
         table.prepareForNextRound()
         
-        for player in table.players:
-            player.hand.cards.extend(table.cards)
-            player.showHand()   
-            player.hand = evaluation.processor.getBest5CardsAsHand(player.hand)
-            player.showHand()
-
-        winnerList =  evaluation.processor.getWinners(table.players)
+        winnerList =  evaluation.processor.getWinners(table)
         print("\n-------------- " + str(len(winnerList)) + " winner(s)! ------------\n" )
         for player in winnerList:
             print("Winner: " + player.name)

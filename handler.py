@@ -3,6 +3,7 @@ import sys
 sys.path.append("cards/")
 sys.path.append("db/")
 sys.path.append("evaluation/")
+import evaluation.playProcessor as playProcessor
 import db.jsonobj as jsob
 import db.datalayer as datalayer
 import logging
@@ -31,7 +32,7 @@ def createOrFindPlayer(event, context):
         body = json.dumps(player,default=jsob.convert_to_dict,indent=4, sort_keys=True)
  
     except Exception as error:
-        logger.exception("Unable to find or create player." + str(error))
+        logger.exception("Unable to find or create player." + error)
         status = 500
         body = str(error)
  
@@ -49,11 +50,64 @@ def findTable(event, context):
         body = json.dumps(table,default=jsob.convert_to_dict,indent=4, sort_keys=True)
 
     except Exception as error:
-        logger.exception("Unable to find or create player." + str(error))
+        logger.exception("Unable to find or create table.", error)
         status = 500
         body = str(error)
 
     return createResponse(status, body)
+
+def makePlay(event, context):
+    logger.info("makePlay called " + str(event))
+    try:
+        playerId = event['playerId']
+        playerAction = event['playerAction']
+        tableId = event['tableId']
+        tableStatusId = event['tableStatusId']
+        actionAmount = event['actionAmount']
+        table =  datalayer.getOrCreateSavedTable(tableId)
+        player = datalayer.getOrCreateSavedPlayer(playerId)
+        logger.info ("Table status Id {0}, passed statusId{1}".format(table.statusId, tableStatusId))
+        logger.info ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        if table.statusId != int(tableStatusId):
+            status = 500
+            body = {"message": "Play is out of turn."}
+            raise  ValueError ("Play is out of turn.")
+        else:
+            table = playProcessor.makePlay(player, table, playerAction, actionAmount, tableStatusId)
+            status = 200
+            body = buildTableResult(table)
+
+    except Exception as error:
+        logger.exception("Unable to make play." ,error)
+        status = 500
+        body = str(error)
+
+    return createResponse(status, body)
+
+def checkForUpdates(event, context):
+    logger.info("checkForUpdates called " + str(event))
+    try:
+        tableId = event['tableId']
+        tableStatusId = event['tableStatusId']
+        playerId = event['playerId']
+        logger.info("tableID: {0}, tableStatusId: {1}, playerId{2}".format(tableId, tableStatusId, playerId))
+        player = datalayer.getOrCreateSavedPlayer(playerId)
+        table =  datalayer.getOrCreateSavedTable(tableId)
+        table = playProcessor.checkForUpdates(table, player, tableStatusId)
+        status = 200
+        body = buildTableResult(table)
+    except Exception as error:
+        logger.exception("Unable to check for updates.", error)
+        status = 500
+        body = str(error)
+
+    return createResponse(status, body)
+
+def buildTableResult(table):
+    table.deck.cards = []
+    body = json.dumps(table,default=jsob.convert_to_dict,indent=0, sort_keys=False)
+    return body
+
 
 def createResponse(status, body):
     response = {

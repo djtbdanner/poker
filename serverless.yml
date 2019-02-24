@@ -92,6 +92,19 @@ functions:
      - http:
          path: findTable
          method: post
+  makePlay:
+    handler: handler.makePlay
+    events:
+     - http:
+         path: makePlay
+         method: post 
+  checkForUpdates:
+    handler: handler.checkForUpdates
+    events:
+     - http:
+         path: checkForUpdates
+         method: post         
+     
   # getNextCard:
     # handler: handler.getNextCard
     # events:

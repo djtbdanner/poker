@@ -4,97 +4,247 @@
 <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
 <meta content="utf-8" http-equiv="encoding">
 <script>
-
-
 	var url = 'https://qhe15uceld.execute-api.us-east-1.amazonaws.com/dev/';
 
-    function callAPI(method, onLoadFunction, params) {
-        const http = new XMLHttpRequest();
-        http.open('POST',url+method, true);
-        http.setRequestHeader('Content-type', 'application/json');
-        http.send(JSON.stringify(params));
-        http.onload = function(){
+	function callAPI(method, onLoadFunction, params) {
+		const http = new XMLHttpRequest();
+		http.open('POST', url + method, true);
+		http.setRequestHeader('Content-type', 'application/json');
+		http.send(JSON.stringify(params));
+		http.onload = function() {
 			onLoadFunction(http)
 		};
 
 		http.onerror = function() {
-            alert("Unfortunately, we've experienced an error." + http.responseText);
-        }
-    }
-	
-	function processCreateOrFindTableResult(http) {
-		var o = JSON.parse(http.responseText);
-		var table = JSON.parse(o.body);
-		var names = "";
-		var count = 1;
-		table.players.forEach(function(player){
-			names += count + " " + player.name + ": ";
-			count++;
-		})
-		alert(names);
-    }
-	
+			alert("Unfortunately, we've experienced an error."
+					+ http.responseText);
+		}
+	}
+
 	function processcreateOrFindPlayerResult(http) {
 		var o = JSON.parse(http.responseText);
 		var o2 = JSON.parse(o.body);
 		document.getElementById("playerId").value = o2.playerId;
 		document.getElementById("playerName").value = o2.name;
-    }	
+	}
 
-	function callCreateOrFindPlayer(){
+	function callCreateOrFindPlayer() {
 		playerId = document.getElementById("playerId").value;
 		name = document.getElementById("playerName").value;
-		
-		if (playerId.length < 1){
+
+		if (playerId.length < 1) {
 			playerId = 'x'
 		}
 		var params = {
-            playerId: playerId,
-            name: name
-        };
-		callAPI('createOrFindPlayer', processcreateOrFindPlayerResult, params);
-	}	
-	
-	function callCreateOrFindTable(){
-		playerId = document.getElementById("playerId").value;
-		if (playerId.length < 1){
-			playerId = 'x'
-		}
-		var params = {
-            playerId: playerId
+			playerId : playerId,
+			name : name
 		};
-		
+		callAPI('createOrFindPlayer', processcreateOrFindPlayerResult, params);
+	}
+
+	function processCreateOrFindTableResult(http) {
+		var o = JSON.parse(http.responseText);
+		var table = JSON.parse(o.body);
+		processTable(table)
+	}
+
+	function callCreateOrFindTable() {
+		playerId = document.getElementById("playerId").value;
+		if (playerId.length < 1) {
+			playerId = 'x'
+		}
+		var params = {
+			playerId : playerId
+		};
 		callAPI('findTable', processCreateOrFindTableResult, params);
+	}
+	
+	function processCheckForUpdateResult(http) {
+		var o = JSON.parse(http.responseText);
+		var table = JSON.parse(o.body);
+		processTable(table)
+	}
+
+	function callCheckForUpdates() {
+		playerId = document.getElementById("playerId").value;
+		tableId = document.getElementById("tableId").value;
+		tableStatusId = document.getElementById("statusId").value;
+		if (isEmpty(playerId) || isEmpty(tableId) || isEmpty(tableStatusId)){
+			alert("missing some ids");
+			return;
+		}
+		var params = {
+				playerId : playerId,
+				tableId : tableId,
+				tableStatusId: tableStatusId
+			};
+		callAPI('checkForUpdates', processCheckForUpdateResult, params);
 	}	
 	
-	function clearIdAndName(){
+	function processMakePlayResult(http) {
+		alert(http.responseText)
+		//var o = JSON.parse(http.responseText);
+		//var table = JSON.parse(o.body);
+		//processTable(table)
+	}
+
+	function callMakePlay() {
+		playerId = document.getElementById("playerId").value;
+		tableId = document.getElementById("tableId").value;
+		tableStatusId = document.getElementById("statusId").value;
+		actionAmount = document.getElementById("actionAmount").value;
+		playerAction = document.getElementById("playerAction").value;
+		var params = {
+				playerId : playerId,
+				tableId : tableId,
+				tableStatusId: tableStatusId,
+				actionAmount, actionAmount,
+				playerAction, playerAction
+			};
+		callAPI('makePlay', processMakePlayResult, params);
+	}	
+	
+
+	function processTable (table){
+		document.getElementById("playerName").style.visibility = "hidden"; 
+		document.getElementById("playerNameLable").style.visibility = "hidden"; 
+
+		var otherPlayers = document.getElementById("otherPlayers");
+		otherPlayers.innerHTML = "";
+		document.getElementById("tableId").value = table.tableId;
+		document.getElementById("statusId").value = table.statusId;
+		var breakElement = document.createElement("br")
+ 		table.players.forEach(function(player) {
+ 	 			cards = ""
+ 	 			if (player.hand.cards.length > 0){
+ 	 				player.hand.cards.forEach (function(card){
+ 	 					cards = cards += card.rank + " of " + card.suit + ", "
+ 	 				})
+ 	 				cards = cards.substring(0, cards.length - 2);
+ 	 			}
+ 	 			if (player.turn){
+ 	 				document.getElementById("playerId").value = player.playerId;
+ 	 				var playerForParagraph = document.createElement("p");
+ 	 				var playerPlayingFor = document.createTextNode("        Playing for: " + player.name );
+ 	 				playerForParagraph.style.fontStyle = "italic";
+ 	 				playerForParagraph.style.fontSize = "20px"; 	 				
+ 	 				playerForParagraph.appendChild(playerPlayingFor)
+ 	 				otherPlayers.appendChild(playerForParagraph);
+ 	 				document.getElementById("currentPlayerBet").value = player.currentBet;
+ 	 			}
+ 				var playerParagraph = document.createElement("p");
+ 	 			var playerInfo = document.createTextNode("Player: " + player.name + "; Chips: " + player.chips + "; Cards: " + cards +  "; Bet: " + player.currentBet );
+ 	 			if (player.turn){
+ 	 				playerParagraph.style.fontWeight = "bold";
+ 	 			}
+ 	 			playerParagraph.appendChild(playerInfo);
+ 	 			otherPlayers.appendChild(playerParagraph);
+		})
+		var tableBet = table.currentBet;
+		document.getElementById("currentTableBet").value = tableBet;
+		var tableInfo = "Current Table Bet: " + tableBet
+		var tableInfoParagraph = document.createElement("p");
+		tableInfoParagraph.appendChild(document.createTextNode(tableInfo));
+		otherPlayers.appendChild(tableInfoParagraph);
+		document.getElementById("betSelector").value = 0;
+		updateAction()
+		
+		/// just sanity that it is changing	
+		otherPlayers.appendChild(breakElement);
+		otherPlayers.appendChild(breakElement);
+		var timeP = document.createElement("p");
+		timeP.style.fontStyle = "italic";
+		timeP.style.fontSize = "14px";
+		var timeT = document.createTextNode(new Date());
+		timeP.appendChild(timeT);
+		otherPlayers.appendChild(timeP);
+	}
+
+	
+	function updateAction(){
+		//alert();
+		// fold, check, bet, call - someday leave
+		theAction = "fold";
+		playerAmount = document.getElementById("betSelector").value;
+		tableBet = document.getElementById("currentTableBet").value;
+		playerExistingBet = document.getElementById("currentPlayerBet").value;
+		playerAmount = parseInt(playerAmount, 10);
+		tableBet = parseInt(tableBet, 10);
+		playerExistingBet = parseInt(playerExistingBet, 10);
+		if (playerExistingBet == tableBet && playerAmount == 0){
+			theAction = "check";
+		}
+		if ((playerExistingBet + playerAmount) == tableBet && playerAmount > 0){
+			theAction = "call";
+		}
+		if ((playerExistingBet + playerAmount) > tableBet){
+			theAction = "bet";
+		}
+		
+		
+		document.getElementById("playerAction").value = theAction;
+		var derivedAction = document.getElementById("derivedAction");
+		derivedAction.innerHTML = "Derived Action: " + theAction;
+		document.getElementById("actionAmount").value = playerAmount - playerExistingBet;
+	}
+	
+	function clearIds() {
+		document.getElementById("playerName").style.visibility = "visible"; 
+		document.getElementById("playerNameLable").style.visibility = "visible"; 
+		var otherPlayers = document.getElementById("otherPlayers");
+		otherPlayers.innerHTML = "";
 		document.getElementById("playerId").value = "";
-		document.getElementById("playerName").value = "";
+		document.getElementById("tableId").value = "";
+		document.getElementById("statusId").value = "";
+		document.getElementById("currentTableBet").value = "";
+		document.getElementById("currentPlayerBet").value = "";
+		document.getElementById("playerAction").value = "";
+		document.getElementById("actionAmount").value = "";
+	}
+	
+	function isEmpty(str) {
+	    return (!str || 0 === str.length);
 	}
 </script>
 </head>
 <body>
+	<br/> 
+    <span id = "playerNameLable">Player Name:</span> <input type="text" id="playerName" name="playerName"/>    
+    <br/> 
+    <div id = "otherPlayers">
+    </div>
+    <div id = "playChoices">
+        <label for="betSelector">Bet Amount:</label>
+        <input type="number" id="betSelector" name="betSelector" min="0" max="100" onChange="updateAction()">
+        <span type="number" id="derivedAction" name="derivedAction">Derived Action: fold</span>
+    </div>
 
-Links
-<br/>
-  <a href="https://qhe15uceld.execute-api.us-east-1.amazonaws.com/dev/hello" target="_blank"> hello </a><br/>
-  <a href="#" onclick="callCreateOrFindPlayer()"> create or find player</a><br/>
-  <a href="#" onclick="callCreateOrFindTable()"> findTable</a><br/>
-  <a href="#" onclick="clearIdAndName()"> clear ID and Name</a><br/>
-  <br/>
-  <br/>
-  Player ID: <input type="text" id = "playerId" name="playerId"><br>
-  <br/>
-  Player Name:  <input type="text" id="playerName" name="playerName"><br>
-  
-  <!-- <a href="https://zduj40k8w8.execute-api.us-east-1.amazonaws.com/dev/getNextCard" target="_blank"> get card</a><br/> -->
-  <!-- <a href="https://zduj40k8w8.execute-api.us-east-1.amazonaws.com/dev/getATable" target="_blank"> get table </a><br/>  -->
-  <!-- <a href="https://zduj40k8w8.execute-api.us-east-1.amazonaws.com/dev/createATableTest" target="_blank"> test create table </a><br/>  -->
 
+	<center>
+		<input type="button" id="findOrCreatePlayer" name="findOrCreatePlayer" value="Find or Create Player" onclick="callCreateOrFindPlayer()"> 
+		<input type="button" id="createOrFindTable" name="createOrFindTable" value="Find or Create Table" onclick="callCreateOrFindTable()"> 
+		<input type="button" id="checkForUpdates" name="checkForUpdates" value="Check for updates" onclick="callCheckForUpdates()">
+		<input type="button" id="makePlay" name="makePlay" value="Make Play" onClick="callMakePlay()">
+        <br/>
+        <br/>
+        <input type="button" id="clearPlayerId" name="clearPlayerId" value="Remove Ids" onClick = "clearIds()">       
+	</center>
+    
+    <br/> 
+    <br/> 
+    These will be hidden eventually...
+    <br> Player ID: <input type="text" id="playerId" name="playerId">
+    <br> Table ID: <input type="text" id="tableId" name="tableId">
+    <br> Table Status Id: <input type="text" id="statusId" name="statusId">
+    <br> Current Table Bet: <input type="text" id="currentTableBet" name="currentTableBet">
+    <br> Current Player bet (amount already on table): <input type="text" id="currentPlayerBet" name="currentPlayerBet">
+    <br> Player Action: <input type="text" id="playerAction" name="playerAction">
+    <br> Player Action Amount: <input type="text" id="actionAmount" name="actionAmount">
+    <br>    
 </body>
 </html>
 
 
 
 
-  
+
