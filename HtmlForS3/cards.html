@@ -11,28 +11,38 @@
 </body>
 
     <script>
-		var cardStylesArray = new Array();
-        function doIt(){
+		var cardMap = new Map();
+        function buildCardMap(){
             var test = document.getElementById("test");
 			var cardRowHeights = ["-7px", "-121px", "-236px", "-350px"];
 			var cardRowWidths = ["-7px", "-85px", "-163px", "-242px", "-320px", "-398px", "-476px", "-555px", "-633px", "-711px", "-790px", "-868px", "-946px"];
+			
+			var suits = ["S", "H", "D", "C"];
+			var ranks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 
 			for (i = 0; i < 4; i++){
 				height = cardRowHeights[i];
+				suit = suits[i];
             	for (j = 0; j < 13; j++){
             		width = cardRowWidths[j];
-            		cardStylesArray.push("width:71px;height:107px;background:url(images/cards.png) " + width + " " +height+";");
+            		rank = ranks[j];
+            		key = rank+suit;
+             		cardMap.set(key, "width:71px;height:107px;background:url(images/cards.png) " + width + " " +height+";");
             	}
             }
          }
-        doIt();
+         buildCardMap();
         
        
         function doAnother(){
-        	for (i = 0; i < cardStylesArray.length; i++){
-        		alert(i + " "  + cardStylesArray[i]);
-        		test.setAttribute("style", cardStylesArray[i]);
-        	}
+        	test.setAttribute("style", cardMap.get("AS"));
+			alert("ace of spades");
+        	test.setAttribute("style", cardMap.get("JD"));
+			alert("Jack of Diamonds");
+        	test.setAttribute("style", cardMap.get("10H"));
+			alert("10 of hearts");
+        	test.setAttribute("style", cardMap.get("3C"));
+			alert("3 of clubs");			
         }
         doAnother();
     </script>

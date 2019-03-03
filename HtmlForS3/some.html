@@ -3,26 +3,31 @@
 <head>
 <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
 <meta content="utf-8" http-equiv="encoding">
-  <style>
-
-            #4S {
-                width: 73px;
-                height: 109px;
-                background: url(images/cards.png) -6px -6px;
-            }
-            #BS {
-                width: 73px;
-                height: 109px;
-                background: url(images/cards.png) -6px -6px;
-            }
-            #AH {
-                width: 73px;
-                height: 109px;
-                background: url(images/cards.png) -6px -121px;
-            }
-            </style>
 <script>
 	var url = 'https://fvl7shd96d.execute-api.us-east-1.amazonaws.com/dev/';
+	
+	var cardMap = new Map();
+    function buildCardMap(){
+        var test = document.getElementById("test");
+		var cardRowHeights = ["-7px", "-121px", "-236px", "-350px"];
+		var cardRowWidths = ["-7px", "-85px", "-163px", "-242px", "-320px", "-398px", "-476px", "-555px", "-633px", "-711px", "-790px", "-868px", "-946px"];
+		
+		var suits = ["S", "H", "D", "C"];
+		var ranks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+
+		for (i = 0; i < 4; i++){
+			height = cardRowHeights[i];
+			suit = suits[i];
+        	for (j = 0; j < 13; j++){
+        		width = cardRowWidths[j];
+        		rank = ranks[j];
+        		key = rank+suit;
+         		cardMap.set(key, "width:71px;height:107px;background:url(images/cards.png) " + width + " " +height+";");
+        	}
+        }
+     }
+     buildCardMap();
+	
 	function callAPI(method, onLoadFunction, params) {
 		document.getElementById("buttons").style.visibility = "hidden"; 
 		const http = new XMLHttpRequest();
@@ -165,14 +170,16 @@
 		var tableBet = table.currentBet;
 		document.getElementById("currentTableBet").value = tableBet;
 		var tableInfo = "Table -- Bet: " + tableBet;
-		var tableInfo = tableInfo + "; Pot: " + table.pot;
+		var tableInfo = tableInfo + "; Pot: " + table.pot + "<br/>";
 		cards = ""
  		if (table.cards.length > 0){
- 			cards = "<ul>";
- 			table.cards.forEach (function(card){
- 				cards = cards += "<li>" + card.rank + " of " + card.suit + "</li>";
+ 			cards += "<div style='width:100%;padding-top:20px;;'>"
+  			table.cards.forEach (function(card){
+ 				cardStyle = cardMap.get(card.rank+card.suit)
+ 				//alert(cardStyle);
+ 				cards = cards += "<div style='"+cardStyle+"float:left;'></div>";
  			})
- 			cards = cards += "</ul>"
+ 			cards += "</div>"
  		}
 		tableInfo = tableInfo + cards;
 		var tableInfoDiv = document.getElementById("tableInfo");
@@ -236,17 +243,15 @@
 </script>
 </head>
 <body>
-            <div id="AS"></div><br><div id="4S">asf</div> 
 	<br/> 
     <span id = "playerNameLable">Player Name:</span> <input type="text" id="playerName" name="playerName"/>    
     <br/> 
     <div id = "otherPlayers">
     </div>
-    <div id = "tableInfo">
+    <div id = "tableInfo" style="clear:both;">
     </div>
     <br/> 
-    <br/> 
-    <div id = "playChoices">
+    <div id = "playChoices" style="clear:both;padding-top:50px;">
         <label for="betSelector">Bet Amount:</label>
         <input type="number" id="betSelector" name="betSelector" min="0" max="100" onChange="updateAction()">
         <span id="derivedAction">Derived Action: fold</span>
