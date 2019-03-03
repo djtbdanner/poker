@@ -137,62 +137,67 @@
 	function processTable (table){
 		document.getElementById("playerName").style.visibility = "hidden"; 
 		document.getElementById("playerNameLable").style.visibility = "hidden"; 
-
+		
+		var tableBet = table.currentBet;
+		
 		var otherPlayers = document.getElementById("otherPlayers");
-		otherPlayers.innerHTML = "";
 		document.getElementById("tableId").value = table.tableId;
 		document.getElementById("statusId").value = table.statusId;
-		var breakElement = document.createElement("br")
+		playerInfo = "";
  		table.players.forEach(function(player) {
- 	 			cards = ""
- 	 			if (player.hand.cards.length > 0){
- 	 				player.hand.cards.forEach (function(card){
- 	 					cards = cards += card.rank + " of " + card.suit + ", "
- 	 				})
- 	 				cards = cards.substring(0, cards.length - 2);
- 	 			}
- 				var playerParagraph = document.createElement("p");
- 				var dealer = player.dealer?" - Dealer":""; 
- 	 			var playerInfo = document.createTextNode("Player: " + player.name + "; Chips: " + player.chips + "; Cards: " + cards +  "; Bet: " + player.currentBet + dealer );
+ 				cards = ""
+ 		 		if (player.hand.cards.length > 0){
+ 		 			cards += "<div style='width:100%;padding-top:5px;'>"
+ 		 			player.hand.cards.forEach (function(card){
+ 		 				cardStyle = cardMap.get(card.rank+card.suit)
+ 		 				cards = cards += "<div style='"+cardStyle+"float:left;'></div>";
+ 		 			})
+ 		 			cards += "</div>"
+ 		 		}
+ 				var playerStyle = 'padding-top:5px;clear:both;';
  	 			if (player.turn){
- 	 				playerParagraph.style.fontWeight = "bold";
- 	 				playerParagraph.style.backgroundColor = "yellow";
+ 	 				playerStyle += "fontweight:bold;";
+ 	 				playerStyle += "background-color:yellow;";
  	 				document.getElementById("currentPlayerBet").value = player.currentBet;
  	 				document.getElementById("playerId").value = player.playerId;
+ 	 				
+ 	 				playerBet = player.currentBet;
+ 	 				amtToCheck = tableBet - playerBet;
+ 	 				if (amtToCheck < 1){
+ 	 					amtToCheck = 0;
+ 	 				}
+ 	 				document.getElementById("betSelector").value = amtToCheck;
+ 	 				document.getElementById("betSelectorLabel").innerHTML = player.name + " bet: ";
  	 			}
  	 			if (player.folded){
- 	 				playerParagraph.style.fontcolor = "grey";
- 	 				playerParagraph.style.backgroundColor = "grey";
+ 	 				playerStyle += "color:grey;";
+ 	 				playerStyle += "background-color:lightgrey;";
  	 			}
- 	 			playerParagraph.appendChild(playerInfo);
- 	 			otherPlayers.appendChild(playerParagraph);
+ 				var dealer = player.dealer?" - Dealer":""; 
+ 	 			playerInfo += "<div style='"+playerStyle+"'>Player: " + player.name + "; Chips: " + player.chips + "; Bet: " + player.currentBet + dealer;
+ 	 			playerInfo = playerInfo + cards + "</div>"
 		})
-		var tableBet = table.currentBet;
+		otherPlayers.innerHTML= playerInfo
 		document.getElementById("currentTableBet").value = tableBet;
-		var tableInfo = "Table -- Bet: " + tableBet;
-		var tableInfo = tableInfo + "; Pot: " + table.pot + "<br/>";
+		var tableInfo = "<hr style='padding-top:5px;'><div style='padding-top:5px;'>Table -- Bet: " + tableBet;
+		var tableInfo = tableInfo + "; Pot: " + table.pot + ";";
 		cards = ""
  		if (table.cards.length > 0){
- 			cards += "<div style='width:100%;padding-top:20px;;'>"
+ 			cards += "<div style='width:100%;padding-top:20px;'>"
   			table.cards.forEach (function(card){
  				cardStyle = cardMap.get(card.rank+card.suit)
- 				//alert(cardStyle);
  				cards = cards += "<div style='"+cardStyle+"float:left;'></div>";
  			})
  			cards += "</div>"
  		}
-		tableInfo = tableInfo + cards;
+		tableInfo = tableInfo + cards + "</div>";
 		var tableInfoDiv = document.getElementById("tableInfo");
 		tableInfoDiv.innerHTML = tableInfo;
-		
-		document.getElementById("betSelector").value = 0;
 		updateAction()
 	}
 
 	
 	function updateAction(){
-		//alert();
-		// fold, check, bet, call - someday leave
 		theAction = "fold";
 		playerAmount = document.getElementById("betSelector").value;
 		tableBet = document.getElementById("currentTableBet").value;
@@ -213,7 +218,7 @@
 		
 		document.getElementById("playerAction").value = theAction;
 		var derivedAction = document.getElementById("derivedAction");
-		derivedAction.innerHTML = "Derived Action: " + theAction;
+		derivedAction.innerHTML = " : " + theAction.toUpperCase();
 		document.getElementById("actionAmount").value = playerAmount;
 	}
 	
@@ -236,7 +241,6 @@
 	}
 	
 	function showInfoText(infoTxt){
-		//alert(infoTxt)
 		var infoTxtDiv = document.getElementById("infoText"); 		
 		infoTxtDiv.innerHTML = infoTxt;
 	}
@@ -252,27 +256,29 @@
     </div>
     <br/> 
     <div id = "playChoices" style="clear:both;padding-top:50px;">
-        <label for="betSelector">Bet Amount:</label>
+        <label for="betSelector" id="betSelectorLabel">Bet Amount:</label>
         <input type="number" id="betSelector" name="betSelector" min="0" max="100" onChange="updateAction()">
-        <span id="derivedAction">Derived Action: fold</span>
+        <span id="derivedAction">: CALL</span>
+        <input type="button" id="makePlay" name="makePlay" value="Make Play" onClick="callMakePlay()">
     </div>
-	<center> 
-        <span id = "buttons">
-    
-		<input type="button" id="findOrCreatePlayer" name="findOrCreatePlayer" value="Find or Create Player" onclick="callCreateOrFindPlayer()"> 
-		<input type="button" id="createOrFindTable" name="createOrFindTable" value="Find or Create Table" onclick="callCreateOrFindTable()"> 
-		<input type="button" id="checkForUpdates" name="checkForUpdates" value="Check for updates" onclick="callCheckForUpdates()">
-		<input type="button" id="makePlay" name="makePlay" value="Make Play" onClick="callMakePlay()">
-        <input type="button" id="removePlayer" name="makePlay" value="Remove Player" onClick="callRemovePlayer()">
-        <br/>
-        <br/>
-        <input type="button" id="clearPlayerId" name="clearPlayerId" value="Remove Ids" onClick = "clearIds()">       
-	   </span>
-    </center>
-    
     <br/> 
     <br/> 
-    <hr>
+    <br/>     
+    <span id = "buttons">
+
+	<input type="button" id="findOrCreatePlayer" name="findOrCreatePlayer" value="Find or Create Player" onclick="callCreateOrFindPlayer()"> 
+	<input type="button" id="createOrFindTable" name="createOrFindTable" value="Find or Create Table" onclick="callCreateOrFindTable()"> 
+	<input type="button" id="checkForUpdates" name="checkForUpdates" value="Check for updates" onclick="callCheckForUpdates()">
+    <input type="button" id="removePlayer" name="makePlay" value="Remove Player" onClick="callRemovePlayer()">
+    <br/>
+    <br/>
+     <br/>
+    <br/>
+    <input type="button" id="clearPlayerId" name="clearPlayerId" value="Remove Ids" onClick = "clearIds()">       
+    </span>
+
+    
+    <br/> 
     <br/> 
     <hr>
     These will be hidden eventually...
@@ -289,28 +295,6 @@
     <div id = "infoText">
     </div>         
 </body>
-
-<script>
-
-//     var ImagePortions = [
-//     	"images/cards.png",
-//     	"url('images/cards.png') -91px 0"];
-    
-//     function doIt(){
-//      //   alert()
-//         var DOM_img = document.createElement("img");
-//      	alert(ImagePortions[0])
-// /*         DOM_img.src = 'images/cards.png';//ImagePortions[0];
-//         var test = document.getElementById("tableInfo")
-//         test.appendChild(DOM_img);
-//          */
-//         DOM_img.src = ImagePortions[0];
-//         var test = document.getElementById("tableInfo")
-//         test.appendChild(DOM_img);
-//      ///   alert();
-//     }
-//     doIt();
-</script>
 </html>
 
 
