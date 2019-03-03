@@ -140,6 +140,8 @@ class TestDealerSet(unittest.TestCase):
         
     def test_play_a_hand (self):
         pokerTable = Table()
+        
+        self.assertFalse(pokerTable.isPlayActive())
         pokerTable.addPlayers(buildPlayers(5))
         self.assertFalse(pokerTable.hasDealer())
         pokerTable.setDealerPosition(0)  # ## Player 1 can be dealer
@@ -148,6 +150,8 @@ class TestDealerSet(unittest.TestCase):
 
         pokerTable.dealRound()
         pokerTable.dealRound()
+        
+        self.assertTrue(pokerTable.isPlayActive())
         
         while not pokerTable.isRoundComplete():
             # ## always 3 because dealer is 0, low blind is 1 and high is 2
@@ -160,6 +164,12 @@ class TestDealerSet(unittest.TestCase):
 
         print('\n--- flop ---\n ')
         pokerTable.dealToTable(3)
+        
+        player = Player("Just Added Player", None, "1234ID")
+        pokerTable.addPlayer(player)
+        playerTest = pokerTable.findPlayerById("1234ID")
+        self.assertTrue(playerTest.folded)
+        
 
         while not pokerTable.isRoundComplete():
             # ## always 1 because dealer is 0
@@ -168,6 +178,8 @@ class TestDealerSet(unittest.TestCase):
                     index = index - len(pokerTable.players)
                 pokerTable.playerCheckByIndex(index)
         pokerTable.prepareForNextRound()
+        
+        self.assertTrue(pokerTable.isPlayActive())
 
         print ('\n--- turn ---\n')
         pokerTable.dealToTable(1)
@@ -196,6 +208,34 @@ class TestDealerSet(unittest.TestCase):
             
         for player in pokerTable.players:
             print(player)
+            
+    def test_find_player(self):
+        table = Table();
+        players = buildPlayers(5)
+        table.addPlayers(players)
+        
+        player = players[2]
+        
+        playerX = table.findPlayerById(player.playerId)
+        self.assertEquals(player.playerId, playerX.playerId)   
+        
+    def test_all_player_fold_flag(self):
+        table = Table();
+        players = buildPlayers(5)
+        table.addPlayers(players)
+        table.dealRound()
+        table.dealRound()
+        
+        self.assertFalse(table.haveAllButOnePlayerFolded())
+        
+        table.players[0].folded = True;
+        self.assertFalse(table.haveAllButOnePlayerFolded())
+        table.players[1].folded = True;
+        self.assertFalse(table.haveAllButOnePlayerFolded())
+        table.players[2].folded = True;
+        self.assertFalse(table.haveAllButOnePlayerFolded())
+        table.players[3].folded = True;
+        self.assertTrue(table.haveAllButOnePlayerFolded())        
         
 def buildPlayers(count):
     players = []

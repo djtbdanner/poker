@@ -3,16 +3,18 @@
 <head>
 <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
 <meta content="utf-8" http-equiv="encoding">
-<script>
-	var url = 'https://uh2zm2q2n3.execute-api.us-east-1.amazonaws.com/dev/';
 
+<script>
+	var url = 'https://402hxozha7.execute-api.us-east-1.amazonaws.com/dev/';
 	function callAPI(method, onLoadFunction, params) {
+		document.getElementById("buttons").style.visibility = "hidden"; 
 		const http = new XMLHttpRequest();
 		http.open('POST', url + method, true);
 		http.setRequestHeader('Content-type', 'application/json');
 		http.send(JSON.stringify(params));
 		http.onload = function() {
-			onLoadFunction(http)
+			onLoadFunction(http);
+			document.getElementById("buttons").style.visibility = "visible"; 
 		};
 
 		http.onerror = function() {
@@ -22,6 +24,7 @@
 	}
 
 	function processcreateOrFindPlayerResult(http) {
+		showInfoText(http.responseText)
 		var o = JSON.parse(http.responseText);
 		var o2 = JSON.parse(o.body);
 		document.getElementById("playerId").value = o2.playerId;
@@ -60,6 +63,7 @@
 	}
 	
 	function processCheckForUpdateResult(http) {
+		showInfoText(http.responseText)
 		var o = JSON.parse(http.responseText);
 		var table = JSON.parse(o.body);
 		processTable(table)
@@ -82,10 +86,10 @@
 	}	
 	
 	function processMakePlayResult(http) {
-		alert(http.responseText)
-		//var o = JSON.parse(http.responseText);
-		//var table = JSON.parse(o.body);
-		//processTable(table)
+		showInfoText(http.responseText)
+		var o = JSON.parse(http.responseText);
+		var table = JSON.parse(o.body);
+		processTable(table)
 	}
 
 	function callMakePlay() {
@@ -94,6 +98,8 @@
 		tableStatusId = document.getElementById("statusId").value;
 		actionAmount = document.getElementById("actionAmount").value;
 		playerAction = document.getElementById("playerAction").value;
+		
+		//alert(actionAmount)
 		var params = {
 				playerId : playerId,
 				tableId : tableId,
@@ -122,42 +128,50 @@
  	 				})
  	 				cards = cards.substring(0, cards.length - 2);
  	 			}
- 	 			if (player.turn){
- 	 				document.getElementById("playerId").value = player.playerId;
- 	 				var playerForParagraph = document.createElement("p");
- 	 				var playerPlayingFor = document.createTextNode("        Playing for: " + player.name );
- 	 				playerForParagraph.style.fontStyle = "italic";
- 	 				playerForParagraph.style.fontSize = "20px"; 	 				
- 	 				playerForParagraph.appendChild(playerPlayingFor)
- 	 				otherPlayers.appendChild(playerForParagraph);
- 	 				document.getElementById("currentPlayerBet").value = player.currentBet;
- 	 			}
  				var playerParagraph = document.createElement("p");
- 	 			var playerInfo = document.createTextNode("Player: " + player.name + "; Chips: " + player.chips + "; Cards: " + cards +  "; Bet: " + player.currentBet );
+ 				var dealer = player.dealer?" - Dealer":""; 
+ 	 			var playerInfo = document.createTextNode("Player: " + player.name + "; Chips: " + player.chips + "; Cards: " + cards +  "; Bet: " + player.currentBet + dealer );
  	 			if (player.turn){
  	 				playerParagraph.style.fontWeight = "bold";
+ 	 				playerParagraph.style.backgroundColor = "yellow";
+ 	 				document.getElementById("currentPlayerBet").value = player.currentBet;
+ 	 				document.getElementById("playerId").value = player.playerId;
+ 	 			}
+ 	 			if (player.folded){
+ 	 				playerParagraph.style.fontcolor = "grey";
+ 	 				playerParagraph.style.backgroundColor = "grey";
  	 			}
  	 			playerParagraph.appendChild(playerInfo);
  	 			otherPlayers.appendChild(playerParagraph);
 		})
 		var tableBet = table.currentBet;
 		document.getElementById("currentTableBet").value = tableBet;
-		var tableInfo = "Current Table Bet: " + tableBet
-		var tableInfoParagraph = document.createElement("p");
-		tableInfoParagraph.appendChild(document.createTextNode(tableInfo));
-		otherPlayers.appendChild(tableInfoParagraph);
+		var tableInfo = "Table -- Bet: " + tableBet;
+		var tableInfo = tableInfo + "; Pot: " + table.pot;
+		cards = ""
+ 		if (table.cards.length > 0){
+ 			cards = "<ul>";
+ 			table.cards.forEach (function(card){
+ 				cards = cards += "<li>" + card.rank + " of " + card.suit + "</li>";
+ 			})
+ 			cards = cards += "</ul>"
+ 		}
+		tableInfo = tableInfo + cards;
+		var tableInfoDiv = document.getElementById("tableInfo");
+		tableInfoDiv.innerHTML = tableInfo;
+		
 		document.getElementById("betSelector").value = 0;
 		updateAction()
 		
-		/// just sanity that it is changing	
-		otherPlayers.appendChild(breakElement);
-		otherPlayers.appendChild(breakElement);
-		var timeP = document.createElement("p");
-		timeP.style.fontStyle = "italic";
-		timeP.style.fontSize = "14px";
-		var timeT = document.createTextNode(new Date());
-		timeP.appendChild(timeT);
-		otherPlayers.appendChild(timeP);
+// 		/// just sanity that it is changing	
+// 		otherPlayers.appendChild(breakElement);
+// 		otherPlayers.appendChild(breakElement);
+// 		var timeP = document.createElement("p");
+// 		timeP.style.fontStyle = "italic";
+// 		timeP.style.fontSize = "14px";
+// 		var timeT = document.createTextNode(new Date());
+// 		timeP.appendChild(timeT);
+// 		otherPlayers.appendChild(timeP);
 	}
 
 	
@@ -185,7 +199,7 @@
 		document.getElementById("playerAction").value = theAction;
 		var derivedAction = document.getElementById("derivedAction");
 		derivedAction.innerHTML = "Derived Action: " + theAction;
-		document.getElementById("actionAmount").value = playerAmount - playerExistingBet;
+		document.getElementById("actionAmount").value = playerAmount;
 	}
 	
 	function clearIds() {
@@ -205,6 +219,12 @@
 	function isEmpty(str) {
 	    return (!str || 0 === str.length);
 	}
+	
+	function showInfoText(infoTxt){
+		//alert(infoTxt)
+		var infoTxtDiv = document.getElementById("infoText"); 		
+		infoTxtDiv.innerHTML = infoTxt;
+	}
 </script>
 </head>
 <body>
@@ -213,6 +233,10 @@
     <br/> 
     <div id = "otherPlayers">
     </div>
+    <div id = "tableInfo">
+    </div>
+    <br/> 
+    <br/> 
     <div id = "playChoices">
         <label for="betSelector">Bet Amount:</label>
         <input type="number" id="betSelector" name="betSelector" min="0" max="100" onChange="updateAction()">
@@ -220,7 +244,9 @@
     </div>
 
 
-	<center>
+	<center> 
+        <span id = "buttons">
+    
 		<input type="button" id="findOrCreatePlayer" name="findOrCreatePlayer" value="Find or Create Player" onclick="callCreateOrFindPlayer()"> 
 		<input type="button" id="createOrFindTable" name="createOrFindTable" value="Find or Create Table" onclick="callCreateOrFindTable()"> 
 		<input type="button" id="checkForUpdates" name="checkForUpdates" value="Check for updates" onclick="callCheckForUpdates()">
@@ -228,10 +254,14 @@
         <br/>
         <br/>
         <input type="button" id="clearPlayerId" name="clearPlayerId" value="Remove Ids" onClick = "clearIds()">       
-	</center>
+	   </span>
+    </center>
     
     <br/> 
     <br/> 
+    <hr>
+    <br/> 
+    <hr>
     These will be hidden eventually...
     <br> Player ID: <input type="text" id="playerId" name="playerId">
     <br> Table ID: <input type="text" id="tableId" name="tableId">
@@ -241,6 +271,10 @@
     <br> Player Action: <input type="text" id="playerAction" name="playerAction">
     <br> Player Action Amount: <input type="text" id="actionAmount" name="actionAmount">
     <br>    
+    <br>    
+    <br>   
+    <div id = "infoText">
+    </div>         
 </body>
 </html>
 

@@ -65,9 +65,9 @@ def makePlay(event, context):
         tableStatusId = event['tableStatusId']
         actionAmount = event['actionAmount']
         table =  datalayer.getOrCreateSavedTable(tableId)
-        player = datalayer.getOrCreateSavedPlayer(playerId)
-        logger.info ("Table status Id {0}, passed statusId{1}".format(table.statusId, tableStatusId))
-        logger.info ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        logger.info("retrieved table: " + table.tableId)
+        player = table.findPlayerById(playerId)
+        logger.info("retrieved player from table: " + player.playerId)
         if table.statusId != int(tableStatusId):
             status = 500
             body = {"message": "Play is out of turn."}
@@ -91,8 +91,10 @@ def checkForUpdates(event, context):
         tableStatusId = event['tableStatusId']
         playerId = event['playerId']
         logger.info("tableID: {0}, tableStatusId: {1}, playerId{2}".format(tableId, tableStatusId, playerId))
-        player = datalayer.getOrCreateSavedPlayer(playerId)
         table =  datalayer.getOrCreateSavedTable(tableId)
+        logger.info("retrieved table: " + table.tableId)
+        player = table.findPlayerById(playerId)
+        logger.info("retrieved player from table: " + player.playerId)
         table = playProcessor.checkForUpdates(table, player, tableStatusId)
         status = 200
         body = buildTableResult(table)

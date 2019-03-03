@@ -23,6 +23,8 @@ class TestPlay(unittest.TestCase):
             table = datalayer.findATableForPlayer(player2)
             player3 = datalayer.getOrCreateSavedPlayer("x", "player three")
             table = datalayer.findATableForPlayer(player3) 
+            player4 = datalayer.getOrCreateSavedPlayer("x", "player four")
+            table = datalayer.findATableForPlayer(player4) 
             
             currentStatusId = table.statusId
             
@@ -34,7 +36,6 @@ class TestPlay(unittest.TestCase):
                     while not table.isRoundComplete():
                         for player in table.players:
                             if player.turn:
-                                ## just check
                                 myBet = table.currentBet - player.currentBet 
                                 playProcessor.makePlay(player, table, 'bet', myBet, table.statusId)
                                 break
@@ -47,6 +48,11 @@ class TestPlay(unittest.TestCase):
             self.assertTrue(len(table.winners)>0)
                 
             table.prepareForNextHand()
+            playerTurnCount = 0
+            for player in table.players:
+                if player.turn:
+                    playerTurnCount = playerTurnCount + 1
+            self.assertEqual(playerTurnCount, 1)
             
 
         except Exception as error:

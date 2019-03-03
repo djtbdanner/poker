@@ -3,6 +3,7 @@ from random import randint
 from deck import Deck
 from player import PlayerAction
 import logging
+import player
 logger = logging.getLogger()
 
 class Table:
@@ -52,6 +53,9 @@ class Table:
 
     def dealPlayer(self, playerIndex):
         player = self.players[playerIndex]
+        if len(player.hand.cards) >= 2:
+            logger.warn(' dealPlayer called for player {0}, id {1}, the request was ignored because player has 2 or more cards'.format(player.name, player.playerId))
+            return
         card = self.deck.deal()
         logger.info(' {0} received a {1}'.format(player.name, card))
         player.hand.cards.append(card)
@@ -103,6 +107,10 @@ class Table:
         self.statusId=self.statusId+1
  
     def setNextPlayerTurn(self, player):
+        logger.info("Setting turn for player after {0}".format(player.name))
+        for p in self.players:
+            p.turn = False
+        
         player.turn = False
         if self.isRoundComplete():
             pass
@@ -112,6 +120,7 @@ class Table:
             while self.players[nextPlayerIndex].folded:
                 nextPlayerIndex = self.getNextPlayerIndex(nextPlayerIndex)
             self.players[nextPlayerIndex].turn = True
+            logger.info("Setting {0}'s turn".format(self.players[nextPlayerIndex].name))
     
     def getNextPlayerIndex(self, playerIndex):
         playerIndex = playerIndex + 1
@@ -126,6 +135,7 @@ class Table:
         player = self.players[playerIndex]
         player.folded = True
         logger.info(' {0} folds, player has a total of {1} chips bet this round'.format(player.name, player.currentBet))
+        self.setNextPlayerTurn(player)
         self.statusId=self.statusId+1
 
     def prepareForNextHand(self):
@@ -165,7 +175,9 @@ class Table:
     def addPlayer(self, player):
         for existingPlayer in self.players:
             if existingPlayer.playerId == player.playerId:
-                raise ValueError(" Cannot add player to table as player is already at table.")
+                raise ValueError(" Cannot add player to table as player is already at table.")    
+        if self.isPlayActive():
+            player.folded = True
         self.players.append(player)
         self.statusId=self.statusId+1
         
@@ -183,6 +195,8 @@ class Table:
     def isHandComplete (self):
         if self.isRoundComplete():
             if len(self.cards) == 5:
+                return True
+            if self.haveAllButOnePlayerFolded():
                 return True
         return False
 
@@ -244,3 +258,29 @@ class Table:
             if player.dealer:
                 return True
         return False
+    
+    def findPlayerById(self, playerId):
+        for player in self.players:
+            if playerId == player.playerId:
+                return player
+        return None
+    
+    def isPlayActive(self):
+        for player in self.players:
+            if len(player.hand.cards) < 0:
+                return True
+        if self.pot != 0:
+            return True
+        if len(self.cards) > 0:
+            return True
+        return False
+    
+    
+    def haveAllButOnePlayerFolded(self):
+        countOfPlayers = 0
+        for player in self.players:
+            if not player.folded:
+                countOfPlayers = countOfPlayers + 1;
+            if countOfPlayers > 1:
+                return False
+        return True

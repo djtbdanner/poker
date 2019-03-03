@@ -51,6 +51,14 @@ def get5CardCombosFrom7CardsForEval(hand):
 def getWinners(table):
     
     logger.debug(" Checking for Winners : " + str(table)) 
+    winnerList = []
+    if table.haveAllButOnePlayerFolded():
+        logger.info(" Player will win by default because all others folded.") 
+        for player in table.players:
+            if not player.folded:
+                winnerList.append(player)
+                return winnerList;
+    
     players = []
     for player in table.players:
         if player.folded:
@@ -62,7 +70,7 @@ def getWinners(table):
             logger.info("Player; {0}, Hand: after best 5: {1} ".format(player.name, player.showHand()))   
             players.append(player)
 
-    winnerList = []
+
     winnerList.append(players[0])
     for player in players:
         if player not in winnerList and not player.folded:
