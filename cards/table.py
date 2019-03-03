@@ -206,12 +206,18 @@ class Table:
             
     def removePlayer(self, player):
         if player in self.players:
+            if player.dealer:
+                indexOfDealer = self.getNextPlayerIndex(self.players.index(player))
+                self.setDealerPosition(self.getNextPlayerIndex(indexOfDealer))
+            elif player.turn:
+                self.setNextPlayerTurn(player)
             self.players.remove(player)
+        self.statusId=self.statusId+1
             
     def removePlayerById(self, playerId):
         for player in self.players:
             if player.playerId == playerId:
-                self.players.remove(player)
+                self.removePlayer(player)
 
     def setBlinds(self):
         '''

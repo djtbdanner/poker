@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+<meta content="utf-8" http-equiv="encoding">
+</head>
+<body>
+
+    <div id = "test"><div>
+   
+</body>
+
+    <script>
+		var cardStylesArray = new Array();
+        function doIt(){
+            var test = document.getElementById("test");
+			var cardRowHeights = ["-7px", "-121px", "-236px", "-350px"];
+			var cardRowWidths = ["-7px", "-85px", "-163px", "-242px", "-320px", "-398px", "-476px", "-555px", "-633px", "-711px", "-790px", "-868px", "-946px"];
+
+			for (i = 0; i < 4; i++){
+				height = cardRowHeights[i];
+            	for (j = 0; j < 13; j++){
+            		width = cardRowWidths[j];
+            		cardStylesArray.push("width:71px;height:107px;background:url(images/cards.png) " + width + " " +height+";");
+            	}
+            }
+         }
+        doIt();
+        
+       
+        function doAnother(){
+        	for (i = 0; i < cardStylesArray.length; i++){
+        		alert(i + " "  + cardStylesArray[i]);
+        		test.setAttribute("style", cardStylesArray[i]);
+        	}
+        }
+        doAnother();
+    </script>
+</html>

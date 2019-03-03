@@ -10,17 +10,6 @@ import logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-def hello(event, context):
-    
-    logger.debug("Hello called " + str(event) + " " + str(context))
-    body = {
-         "message": "Go Serverless v1.0! Your function executed successfully!",
-         "input": event
-     }
-
-    return createResponse(200, body)
-
-
 def createOrFindPlayer(event, context):
     logger.info("createOrFindPlayer called " + str(event) + " " + str(context))
     try:
@@ -100,6 +89,28 @@ def checkForUpdates(event, context):
         body = buildTableResult(table)
     except Exception as error:
         logger.exception("Unable to check for updates.", error)
+        status = 500
+        body = str(error)
+
+    return createResponse(status, body)
+
+def removePlayer(event, context):
+    logger.info("removePlayer called " + str(event))
+    try:
+        tableId = event['tableId']
+        playerId = event['playerId']
+        logger.info("tableID: {0}, playerId{1}".format(tableId, playerId))
+        table =  datalayer.getOrCreateSavedTable(tableId)
+        logger.info("retrieved table: " + table.tableId)
+        player = table.findPlayerById(playerId)
+        logger.info("retrieved player from table: " + player.playerId)
+        table.removePlayer(player)
+        datalayer.deletePlayer(player)
+        datalayer.updateTable(table)
+        status = 200
+        body = buildTableResult(table)
+    except Exception as error:
+        logger.exception("Unable to remove player.", error)
         status = 500
         body = str(error)
 

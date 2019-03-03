@@ -74,12 +74,6 @@ package:
     - test/**
 
 functions:
-  hello:
-    handler: handler.hello
-    events:
-     - http:
-         path: hello
-         method: get
   createOrFindPlayer:
     handler: handler.createOrFindPlayer
     events:
@@ -103,7 +97,13 @@ functions:
     events:
      - http:
          path: checkForUpdates
-         method: post         
+         method: post  
+  removePlayer:
+    handler: handler.removePlayer
+    events:
+     - http:
+         path: removePlayer
+         method: post           
      
   # getNextCard:
     # handler: handler.getNextCard
