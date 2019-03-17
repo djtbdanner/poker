@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+<meta content="utf-8" http-equiv="encoding">
+<title>Poker</title>
+<style>
+    :root { 
+        --div-size: 100px;
+    }
+    
+    body {
+    	height: 100%;
+    	width: 100%;
+    	background-image: url(images/background.jpg);
+    }
+    
+    div {
+        position: fixed;
+    	width: var(--div-size);
+    	height: var(--div-size);
+        background-color: transparent;
+        width: auto;
+        height: auto;
+        transition: all 0.5s linear;
+    }
+    
+    input[type=text] {
+        padding: 0;
+        height: 30px;
+        position: relative;
+        left: 0;
+        outline: none;
+        border: 1px solid #cdcdcd;
+        border-color: #4CAF50; /* Green */
+        background-color: white;
+        font-size: 16px;
+     }
+    
+    .button{
+        background-color: #4CAF50; /* Green */
+        border: none;
+        color: white;
+        margin: 10px;
+        padding: 10px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+    }
+
+    .bottomcenter {
+    	left: calc(50% - .5 * var(--div-size));
+    	bottom: 0%;
+    }
+    .topcenter {
+    	left: calc(50% - .5 * var(--div-size));
+        top: 0%;
+    }
+    .upperLeft {
+        top: calc(15% - .5 * var(--div-size));
+        left: 0%;
+    }
+    .lowerLeft {
+        top:  calc(75% - .5 * var(--div-size));
+        left: 0%;
+    }
+    .upperRight {
+        top:  calc(15% - .5 * var(--div-size));
+        left: calc(100% - var(--div-size));
+    }
+    .lowerRight {
+        top: calc(75% - .5 * var(--div-size));
+        left: calc(100% - var(--div-size));
+    }
+    .center {
+    	top: calc(50% - .5 * var(--div-size));
+    	left: calc(50% - .5 * var(--div-size));
+    }
+    
+    .withMargin{
+        margin: 20px;
+    }
+</style>
+<script>
+    var url = 'https://fvl7shd96d.execute-api.us-east-1.amazonaws.com/dev/';
+    
+    var cardMap = new Map();
+    function buildCardMap(){
+        var test = document.getElementById("test");
+    	var cardRowHeights = ["-7px", "-121px", "-236px", "-350px"];
+    	var cardRowWidths = ["-7px", "-85px", "-163px", "-242px", "-320px", "-398px", "-476px", "-555px", "-633px", "-711px", "-790px", "-868px", "-946px"];
+    	
+    	var suits = ["S", "H", "D", "C"];
+    	var ranks = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+    
+    	for (i = 0; i < 4; i++){
+    		height = cardRowHeights[i];
+    		suit = suits[i];
+        	for (j = 0; j < 13; j++){
+        		width = cardRowWidths[j];
+        		rank = ranks[j];
+        		key = rank+suit;
+         		cardMap.set(key, "width:71px;height:107px;background:url(images/cards.png) " + width + " " +height+";");
+        	}
+        }
+     }
+     buildCardMap();
+     var backStyle1 =      "width:71px;height:107px;background:url(images/cardbacks.png)-7px -2px;";
+     var backStyle2 =      "width:71px;height:107px;background:url(images/cardbacks.png)-7px -121px;";
+     var backStyle3 =      "width:71px;height:107px;background:url(images/cardbacks.png)-7px -236px;";
+     var backStyle4 =      "width:71px;height:107px;background:url(images/cardbacks.png)-7px -350px;";
+
+ 	function processcreateOrFindPlayerResult(http) {
+		var o = JSON.parse(http.responseText);
+		var o2 = JSON.parse(o.body);
+		playerId = localStorage.setItem('pokerPlayerId', o2.playerId);
+		document.getElementById("playerId").value = o2.playerId;
+		document.getElementById("thePlayerName").value = o2.name;
+		clearRegisterDiv();
+	}
+
+	function callCreateOrFindPlayer() {
+		playerId = document.getElementById("playerId").value;
+		// first try from temp input
+		var playerNameElement =  document.getElementById("playerName");
+		// try the hidden field
+		if (playerNameElement == null){
+			playerNameElement = document.getElementById("thePlayerName");
+		}
+		name = playerNameElement.value;
+		if (playerId.length < 1) {
+			playerId = 'x'
+		}
+		var params = {
+			playerId : playerId,
+			name : name
+		};
+		callAPI('createOrFindPlayer', processcreateOrFindPlayerResult, params);
+	}	
+
+	function initPage() {
+		// check to see if player id and table id
+		playerId = localStorage.getItem('pokerPlayerId');
+		if (playerId == null) {
+			box = "<center><h1 class='withMargin'> Hello new player, what is your name?</h1>";
+			box +=	"<input type='text' class='withMargin' size = '40' id='playerName' name='playerName' onChange='setForEnterEventListener(document.getElementById(\"playerButton\"), callCreateOrFindPlayer)'/><br>";
+			box +=	"<input class='button' type='button' size = '30' id='playerButton' name='playerButton' value = 'SUBMIT NAME'/>";
+			box +=	"<p><i>You are considered a new player when you use a differnt browser or remove local data.</i></p>";
+			box += "</center>"
+			
+			var registerDiv = document.getElementById("register");
+			registerDiv.innerHTML = box;
+			registerDiv.style.backgroundColor="white";
+			rePositionDiv(registerDiv);
+		} else {
+			document.getElementById("playerId").value = playerId;
+			callCreateOrFindPlayer();
+		}
+	}
+	
+	/***
+	* Call the poker API
+	* metod is the api call
+	* onLoadFunction is the function to call when data is returned
+	* params are, you guessed it, the parameters to pass to the caller.
+	*/	
+	function callAPI(method, onLoadFunction, params) {
+		const http = new XMLHttpRequest();
+		http.open('POST', url + method, true);
+		http.setRequestHeader('Content-type', 'application/json');
+		http.send(JSON.stringify(params));
+		http.onload = function() {
+			onLoadFunction(http);
+		};
+		http.onerror = function() {
+			alert("Unfortunately, we've experienced an error." + http.responseText);
+		}
+	}
+	
+	function setForEnterEventListener(theElement, functionToCall){
+		theElement.addEventListener('keypress', function(event) {
+        	if (event.keyCode == 13) {
+            	event.preventDefault();
+            	functionToCall();
+        	}
+    	});
+    }
+	
+	/***
+	* reset or clear the register div
+	*/
+	function clearRegisterDiv(){
+		var registerDiv = document.getElementById("register");
+		registerDiv.innerHTML = "";
+	}
+	
+	/***
+	* Based on the size of the div, center it onto the page.
+	*/
+	function rePositionDiv(theDiv) {
+		var newDivWidth = theDiv.clientWidth;
+		var newDivHeight = theDiv.clientHeight;
+		theDiv.style.left = "calc(50% - " + (.5 * newDivWidth) + "px)";
+		theDiv.style.top = "calc(50% - " + (.5 * newDivHeight) + "px)";
+	}
+</script>
+</head>
+
+<body onLoad = "initPage();">
+    <form>
+    <div id = "register" class = "topcenter"></div>
+
+
+    <div id = "player1" class="bottomcenter"></div>
+    <div id = "player2" class="lowerLeft"></div>
+    <div id = "player3" class="upperLeft"></div>
+    <div id = "player4" class="topcenter"></div>
+    <div id = "player5" class="upperRight"></div>
+    <div id = "player6" class="lowerRight"></div>
+    <div id = "tableInfo" class = "center"></div>
+    
+    
+    <div style= "visibility: visible;">
+    <br> Player ID: <input type="text" id="playerId" name="playerId">
+    <br> Player Name: <input type="text" id="thePlayerName" name="thePlayerName">    
+    <br> Table ID: <input type="text" id="tableId" name="tableId">
+    <br> Table Status Id: <input type="text" id="statusId" name="statusId">
+    <br> Current Table Bet: <input type="text" id="currentTableBet" name="currentTableBet">
+    <br> Current Player bet (amount already on table): <input type="text" id="currentPlayerBet" name="currentPlayerBet">
+    <br> Player Action: <input type="text" id="playerAction" name="playerAction">
+    <br> Player Action Amount: <input type="text" id="actionAmount" name="actionAmount">
+    </div>
+    </form>
+</body>
+<script>
+
+
+
+	 // example cards 
+//      function playCard(){
+//     	cards = "";
+//         cardStyle = cardMap.get("AH");
+//         cards += "<span style='"+cardStyle+"float:left;'></span>";
+//         cardStyle = cardMap.get("AH");
+//         cards += "<span style='"+backStyle1+"float:left;'></span>";
+//         cardStyle = cardMap.get("KS");
+//         cards += "<span style='"+backStyle2+"float:left;'></span>";
+//         cardStyle = cardMap.get("QC");
+//         cards += "<span style='"+backStyle3+"float:left;'></span>";
+//         cardStyle = cardMap.get("QH");
+//         cards += "<span style='"+backStyle4+"float:left;'></span>";
+//         var tableInfoDiv = document.getElementById("tableInfo");
+//         tableInfoDiv.innerHTML = cards;
+//        	var newDivWidth = tableInfoDiv.clientWidth;
+//        	var newDivWidth = tableInfoDiv.clientWidth;
+//        	tableInfoDiv.style.left =  "calc(50% - "+(.5*newDivWidth)+"px)";
+//        	tableInfoDiv.style.left =  "calc(50% - "+(.5*newDivWidth)+"px)";
+//      }
+//      playCard();
+</script>
+</html>
