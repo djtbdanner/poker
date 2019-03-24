@@ -103,7 +103,7 @@ def getOrCreateSavedTable(tableId):
 
 def updateTable(table):
     try:
-        logger.debug("Attempting to update table :" + str(table.tableId))
+        logger.info("Attempting to update table :" + str(table.tableId))
         jsondata = json.dumps(table,default=jsob.convert_to_dict,indent=None, sort_keys=False)
         pokerTable.put_item(
                 Item={
@@ -118,13 +118,13 @@ def updateTable(table):
         
 def deleteTable(table):
     try:
-        logger.debug("Attempting to delete table :" + str(table.tableId))
+        logger.info("Attempting to delete table :" + str(table.tableId))
         pokerTable.delete_item(
             Key={
                 'pokerTableId': table.tableId
                 }
         )
-        logger.debug("Table deleted.")
+        logger.info("Table deleted.")
     except Exception as error:
         logger.exception("Unable to delete Table." + str(error))
 

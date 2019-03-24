@@ -250,6 +250,10 @@ body {background-color: rgb(85, 170, 85);}
 		var infoTxtDiv = document.getElementById("infoText"); 		
 		infoTxtDiv.innerHTML = infoTxt;
 	}
+	
+	function automate(){
+		updateCheck = setInterval(callCheckForUpdates,5000);
+	}
 </script>
 </head>
 <body>
@@ -276,6 +280,7 @@ body {background-color: rgb(85, 170, 85);}
 	<input type="button" id="createOrFindTable" name="createOrFindTable" value="Find or Create Table" onclick="callCreateOrFindTable()"> 
 	<input type="button" id="checkForUpdates" name="checkForUpdates" value="Check for updates" onclick="callCheckForUpdates()">
     <input type="button" id="removePlayer" name="makePlay" value="Remove Player" onClick="callRemovePlayer()">
+    <input type="button" id="removePlayer" name="makePlay" value="Check For Updates automatically" onClick="automate()">
     <br/>
     <br/>
      <br/>

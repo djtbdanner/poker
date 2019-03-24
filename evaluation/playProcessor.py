@@ -62,7 +62,7 @@ def processWinners(table):
 
 
 def checkForUpdates(table, player, currentStatus):
-    if len(table.players) > 1:
+    if len(table.players) > 2:
         if not table.hasDealer():
             table.setDealerAtRandom()
         while not table.doAllPlayersHaveTwoCards():

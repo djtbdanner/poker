@@ -69,9 +69,11 @@ package:
   exclude:
     - .gitignore
     - .project
-    - .README.md
+    - README.md
     - serverless.yml
     - test/**
+    - HtmlForS3/**
+  
 
 functions:
   createOrFindPlayer:

@@ -4,84 +4,7 @@
 <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
 <meta content="utf-8" http-equiv="encoding">
 <title>Poker</title>
-<style>
-    :root { 
-        --div-size: 100px;
-    }
-    
-    body {
-    	height: 100%;
-    	width: 100%;
-    	background-image: url(images/background.jpg);
-    }
-    
-    div {
-        position: fixed;
-    	width: var(--div-size);
-    	height: var(--div-size);
-        background-color: transparent;
-        width: auto;
-        height: auto;
-        transition: all 0.5s linear;
-    }
-    
-    input[type=text] {
-        padding: 0;
-        height: 30px;
-        position: relative;
-        left: 0;
-        outline: none;
-        border: 1px solid #cdcdcd;
-        border-color: #4CAF50; /* Green */
-        background-color: white;
-        font-size: 16px;
-     }
-    
-    .button{
-        background-color: #4CAF50; /* Green */
-        border: none;
-        color: white;
-        margin: 10px;
-        padding: 10px;
-        text-align: center;
-        text-decoration: none;
-        display: inline-block;
-        font-size: 16px;
-    }
-
-    .bottomcenter {
-    	left: calc(50% - .5 * var(--div-size));
-    	bottom: 0%;
-    }
-    .topcenter {
-    	left: calc(50% - .5 * var(--div-size));
-        top: 0%;
-    }
-    .upperLeft {
-        top: calc(15% - .5 * var(--div-size));
-        left: 0%;
-    }
-    .lowerLeft {
-        top:  calc(75% - .5 * var(--div-size));
-        left: 0%;
-    }
-    .upperRight {
-        top:  calc(15% - .5 * var(--div-size));
-        left: calc(100% - var(--div-size));
-    }
-    .lowerRight {
-        top: calc(75% - .5 * var(--div-size));
-        left: calc(100% - var(--div-size));
-    }
-    .center {
-    	top: calc(50% - .5 * var(--div-size));
-    	left: calc(50% - .5 * var(--div-size));
-    }
-    
-    .withMargin{
-        margin: 20px;
-    }
-</style>
+<link rel="stylesheet" type="text/css" href="css/default.css">
 <script>
     var url = 'https://fvl7shd96d.execute-api.us-east-1.amazonaws.com/dev/';
     
@@ -111,13 +34,32 @@
      var backStyle3 =      "width:71px;height:107px;background:url(images/cardbacks.png)-7px -236px;";
      var backStyle4 =      "width:71px;height:107px;background:url(images/cardbacks.png)-7px -350px;";
 
+ 	/***
+ 	* Call the poker API
+ 	* metod is the api call
+ 	* onLoadFunction is the function to call when data is returned
+ 	* params are, you guessed it, the parameters to pass to the caller.
+ 	*/	
+ 	function callAPI(method, onLoadFunction, params) {
+ 		const http = new XMLHttpRequest();
+ 		http.open('POST', url + method, true);
+ 		http.setRequestHeader('Content-type', 'application/json');
+ 		http.send(JSON.stringify(params));
+ 		http.onload = function() {
+ 			onLoadFunction(http);
+ 		};
+ 		http.onerror = function() {
+ 			alert("Unfortunately, we've experienced an error." + http.responseText);
+ 		}
+ 	}
+     
  	function processcreateOrFindPlayerResult(http) {
 		var o = JSON.parse(http.responseText);
-		var o2 = JSON.parse(o.body);
-		playerId = localStorage.setItem('pokerPlayerId', o2.playerId);
-		document.getElementById("playerId").value = o2.playerId;
-		document.getElementById("thePlayerName").value = o2.name;
-		clearRegisterDiv();
+		var player = JSON.parse(o.body);
+		playerId = localStorage.setItem('pokerPlayerId', player.playerId);
+		document.getElementById("playerId").value = player.playerId;
+		document.getElementById("thePlayerName").value = player.name;
+		greetPlayer(player)
 	}
 
 	function callCreateOrFindPlayer() {
@@ -136,73 +78,340 @@
 			playerId : playerId,
 			name : name
 		};
+		clearRegisterDiv();
 		callAPI('createOrFindPlayer', processcreateOrFindPlayerResult, params);
 	}	
 
+	function findATable() {
+		clearRegisterDiv();
+		playerId = document.getElementById("playerId").value;
+		if (playerId.length < 1) {
+			playerId = 'x'
+		}
+		var params = {
+			playerId : playerId
+		};
+		callAPI('findTable', processFindTableReply, params);
+	}
+	
+	function processFindTableReply(http) {
+		if (checkForErrors(http.responseText)){
+			alert("Unfortunately there were errors in processing.");
+			return;
+		}
+		var o = JSON.parse(http.responseText);
+		var table = JSON.parse(o.body);
+		processTable(table);
+		startCheckingForUpdates();
+	}	
+	var updateCheck;
+	
+	function startCheckingForUpdates(){
+		updateCheck = setInterval(callCheckForUpdates,1000);
+	}
+	
+	function stopCheckingForUpdates(){
+		clearInterval(updateCheck);
+	}
+	
+	function callCheckForUpdates() {
+		playerId = document.getElementById("playerId").value;
+		tableId = document.getElementById("tableId").value;
+		tableStatusId = document.getElementById("statusId").value;
+		if (isEmpty(playerId) || isEmpty(tableId) || isEmpty(tableStatusId)){
+			alert("missing some ids");
+			return;
+		}
+		var params = {
+				playerId : playerId,
+				tableId : tableId,
+				tableStatusId: tableStatusId
+			};
+		callAPI('checkForUpdates', processCheckUpdateReply, params);
+	}
+	
+	function processCheckUpdateReply(http) {
+		if (checkForErrors(http.responseText)){
+			alert("Unfortunately there were errors in processing.");
+			return;
+		}
+		var o = JSON.parse(http.responseText);
+		var table = JSON.parse(o.body);
+		processTable(table)
+	}		
+	
+	function callMakePlay() {
+		playerId = document.getElementById("playerId").value;
+		tableId = document.getElementById("tableId").value;
+		tableStatusId = document.getElementById("statusId").value;
+		actionAmount = document.getElementById("actionAmount").value;
+		playerAction = document.getElementById("playerAction").value;
+
+		var params = {
+				playerId : playerId,
+				tableId : tableId,
+				tableStatusId: tableStatusId,
+				actionAmount, actionAmount,
+				playerAction, playerAction
+			};
+		
+		document.getElementById("actionAmount").value = '';
+		document.getElementById("playerAction").value = '';
+		startCheckingForUpdates();
+		callAPI('makePlay', processCheckUpdateReply, params);
+	}	
+	
+	function processTable (table){
+		clearRegisterDiv();
+ 		if (document.getElementById("statusId").value == table.statusId){
+ 			//showInfoTxt ("nothing has changed, no need to do anything at this point." + new Date(), 'yellow');
+ 			return;
+ 		}
+
+		document.getElementById("tableId").value = table.tableId;
+ 		document.getElementById("statusId").value = table.statusId;
+ 		
+ 		localStorage.setItem('pokerTableId', table.tableId);
+ 		
+ 		thisPlayerId  = document.getElementById("playerId").value;
+ 		localStorage.setItem('pokerTableId', table.tableId);
+ 		localStorage.setItem('pokerTableStatusId', table.statusId);
+
+ 		buildPlayers(table);
+  		buildTable(table)
+	}
+
+	function buildPlayers(table){
+		var player1Index;
+		numberOfPlayers =  table.players.length;
+		
+		table.players.forEach(function(player, index) {
+			if (player.playerId == thisPlayerId){
+				player1Index = index;
+			}
+		})
+		buildPlayerDiv("player1", table.players[player1Index], true, table);
+		
+		// the dealer is index 0 on the table, but we want display to stay same
+		playerNumber = 2;
+		for (i = 0; i < numberOfPlayers-1; i++){
+			playerIndex = player1Index + i + 1;
+			if (playerIndex > numberOfPlayers - 1){
+				playerIndex = playerIndex - numberOfPlayers; 
+			}
+			buildPlayerDiv("player" + playerNumber, table.players[playerIndex], false, table);
+			playerNumber = playerNumber + 1;
+		}
+	}
+	
+	function buildPlayerDiv(theDiv, player, currentPlayer, table){
+		
+		playerDiv = document.getElementById(theDiv);
+		playerDiv.style.width = "auto";
+		playerDiv.style.height = "auto";
+		htmlString = "<h2>" + player.name + "</h2>";
+		htmlString += "<p>" + player.chips + " chips, betting " + player.currentBet + " chips.</p>";
+
+		if (player.dealer){
+			htmlString += "<p class='circle' style='background-color:blue;'>DEALER</p>";
+		}
+		if (player.turn){
+			htmlString += "<p class='circle' style='background-color:green;'>Player Turn</p>";
+		}
+		
+		if (player.folded){
+			htmlString += "<p class='circle' style='background-color:gray;'>Player Folds</p>";
+		}
+		
+		table.winners.forEach(function(winner){
+			if(winner.playerId == player.playerId && table.cards.length === 0){
+				htmlString += "<p class='circle' style='background-color:red;'>WINNER</p>";
+			}
+		})
+		
+ 		if (!player.folded && player.hand.cards.length > 0){
+ 			player.hand.cards.forEach (function(card){
+ 				cardStyle = cardMap.get(card.rank+card.suit)
+ 				if (currentPlayer){
+ 					htmlString += "<span style='"+cardStyle+"display: inline-block;float:left;'></span>";
+ 				} else {
+ 					htmlString += "<span style='"+backStyle4+"display: inline-block;float:left;'></span>";
+ 				}
+ 			})
+ 		}
+		playerDiv.classList.add('showDiv');
+		playerDiv.innerHTML = htmlString
+		
+		if (player.turn && currentPlayer){
+			requestPlayerInput(player, table);
+		}
+	}
+	
+    function buildTable(table){
+    	var tableInfoDiv = document.getElementById("tableInfo");
+       	tableInfoDiv.style.width = "auto";
+        tableInfoDiv.innerHTML = "";
+       	cardsHTML = '';
+  		if (table.cards.length > 0){
+   			table.cards.forEach (function(card){
+   				cardStyle = cardMap.get(card.rank+card.suit)
+   				cardsHTML += "<span style='"+cardStyle+"display: inline-block;float:left;'></span>";
+  			})
+		}
+       	
+       	cardsHTML += "<h4>POT: "+ table.pot+ " chips</h4>"
+       	cardsHTML += "<h4>BET: "+ table.currentBet+ " chips</h4>"
+        tableInfoDiv.innerHTML = cardsHTML;
+       	var newDivWidth = tableInfoDiv.clientWidth;
+     	tableInfoDiv.style.left =  "calc(50% - "+(.5*newDivWidth)+"px)";
+     }
+    
 	function initPage() {
-		// check to see if player id and table id
 		playerId = localStorage.getItem('pokerPlayerId');
+		tableId = localStorage.getItem('pokerTableId');
+		tableStatusId = localStorage.getItem('pokerTableStatusId');		
+		if (tableId != null && playerId != null && statusId != null){
+			document.getElementById("playerId").value = playerId;
+			document.getElementById("tableId").value = tableId;
+			document.getElementById("statusId").value = 0;// init page, want screen to refresh with current table data
+			callCheckForUpdates();
+			startCheckingForUpdates();
+			return;
+		}
+
 		if (playerId == null) {
-			box = "<center><h1 class='withMargin'> Hello new player, what is your name?</h1>";
-			box +=	"<input type='text' class='withMargin' size = '40' id='playerName' name='playerName' onChange='setForEnterEventListener(document.getElementById(\"playerButton\"), callCreateOrFindPlayer)'/><br>";
-			box +=	"<input class='button' type='button' size = '30' id='playerButton' name='playerButton' value = 'SUBMIT NAME'/>";
-			box +=	"<p><i>You are considered a new player when you use a differnt browser or remove local data.</i></p>";
-			box += "</center>"
-			
-			var registerDiv = document.getElementById("register");
-			registerDiv.innerHTML = box;
-			registerDiv.style.backgroundColor="white";
-			rePositionDiv(registerDiv);
+			meetPlayer();
 		} else {
 			document.getElementById("playerId").value = playerId;
 			callCreateOrFindPlayer();
 		}
 	}
+
+	function greetPlayer(player){
+		htmlString = "<h1 class='withMargin'>Welcome "+player.name+"!</h1>";
+		htmlString +=	"<p class='withMargin'>You have "+player.chips+" chips.</p>";
+		htmlString +=	"<p class='withMargin'>Are you ready to find a table?</p>";
+		htmlString +=	"<input class='button' type='button' id='findTableButton' name='findTableButton' value='FIND A TABLE' onClick='findATable()' />";
+		htmlString +=	"<input class='button' type='button' value = 'CANCEL' onClick='clearRegisterDiv()' />";
+		// images is encoded 1x1 px transparent using to get the script to run on this div
+		htmlString +=	"<img src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7' onLoad='focusOnElement(\"findTableButton\");' />";
+		showHtmlInRegisterDiv(htmlString);	
+	}
 	
-	/***
-	* Call the poker API
-	* metod is the api call
-	* onLoadFunction is the function to call when data is returned
-	* params are, you guessed it, the parameters to pass to the caller.
-	*/	
-	function callAPI(method, onLoadFunction, params) {
-		const http = new XMLHttpRequest();
-		http.open('POST', url + method, true);
-		http.setRequestHeader('Content-type', 'application/json');
-		http.send(JSON.stringify(params));
-		http.onload = function() {
-			onLoadFunction(http);
-		};
-		http.onerror = function() {
-			alert("Unfortunately, we've experienced an error." + http.responseText);
+	function meetPlayer(){
+		htmlString = "<h1 class='withMargin'> Hello player, what is your name?</h1>";
+		htmlString +=	"<input type='text' class='withMargin' size = '40' id='playerName' name='playerName' onChange='focusOnElement(\"playerButton\")'/><br>";
+		htmlString +=	"<input class='button' type='button' value = 'SUBMIT NAME' onClick='callCreateOrFindPlayer()' />";
+		htmlString +=	"<img src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7' onLoad='focusOnElement(\"playerName\");' />";
+		showHtmlInRegisterDiv(htmlString);
+ 	}
+	
+	function requestPlayerInput(player, table){
+		
+		stopCheckingForUpdates();
+		playerBet = player.currentBet;
+		tableBet = table.currentBet;
+		amtToCheck = tableBet - playerBet;
+		if (amtToCheck < 1){
+			amtToCheck = 0;
+		}
+		document.getElementById("actionAmount").value = amtToCheck;
+		htmlString = "<h2 class='withMargin'>It's your turn "+player.name+"</h2>";
+		htmlString += "<p>Currently bet: " + playerBet + "; table bet: " + tableBet + "; pot: " +table.pot + "; to check: " + amtToCheck +".</p>"; 
+		htmlString += "<input type='number' id='betSelector' name='betSelector' min='0' max='100' value='" +amtToCheck+ "' onChange='processActionAmount(\"betButton\", this, "+amtToCheck+")'><br>";
+		htmlString += "<input class='button' type='button' id = 'betButton' value = 'BET' disabled onClick='setActionAndCall(\"bet\")' />";
+		htmlString += "<input class='button' type='button' id = 'checkButton' value = 'CHECK' onClick='setActionAndCall(\"check\")' />";
+		htmlString += "<input class='button' type='button' id = 'foldButton' value = 'FOLD' onClick='setActionAndCall(\"fold\")' />";
+		htmlString += "<img src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7' onLoad='focusOnElement(\"betSelector\");' />";
+		var registerDiv = document.getElementById("register");
+		registerDiv.classList.add('showDiv');
+		registerDiv.innerHTML = htmlString;
+		var newDivWidth = registerDiv.clientWidth;
+		var newDivHeight = registerDiv.clientHeight;
+		registerDiv.style.left = "calc(50% - " + (.5 * newDivWidth) + "px)";
+		registerDiv.style.top = "0px";
+ 	}	
+	
+	
+	// for bet action div
+	function processActionAmount(theElementId, selector, amtToCheck){
+		e = document.getElementById(theElementId);
+		amount = selector.value;
+		document.getElementById("actionAmount").value = amount;
+		if (e){
+			if(amount > amtToCheck){
+				e.disabled = false;
+			} else {
+				e.disabled = true;
+			}
 		}
 	}
 	
-	function setForEnterEventListener(theElement, functionToCall){
-		theElement.addEventListener('keypress', function(event) {
-        	if (event.keyCode == 13) {
-            	event.preventDefault();
-            	functionToCall();
-        	}
-    	});
+	function setActionAndCall(theAction){
+		document.getElementById("playerAction").value = theAction;
+		callMakePlay();
+		clearRegisterDiv();
+	}
+	
+	
+	function focusOnElement(theElementId){
+		e = document.getElementById(theElementId);
+		if (e){
+			e.focus();
+		}
     }
 	
-	/***
-	* reset or clear the register div
-	*/
 	function clearRegisterDiv(){
 		var registerDiv = document.getElementById("register");
+		registerDiv.classList.remove('showDiv');
+		registerDiv.style = 'div';
 		registerDiv.innerHTML = "";
 	}
 	
-	/***
-	* Based on the size of the div, center it onto the page.
-	*/
+	function showHtmlInRegisterDiv(htmlString){
+		var registerDiv = document.getElementById("register");
+		registerDiv.classList.add('showDiv');
+		registerDiv.innerHTML = htmlString;
+		rePositionDiv(registerDiv);
+	}
+	
 	function rePositionDiv(theDiv) {
 		var newDivWidth = theDiv.clientWidth;
 		var newDivHeight = theDiv.clientHeight;
 		theDiv.style.left = "calc(50% - " + (.5 * newDivWidth) + "px)";
 		theDiv.style.top = "calc(50% - " + (.5 * newDivHeight) + "px)";
+	}
+	
+	function isEmpty(str) {
+	    return (!str || 0 === str.length);
+	}
+
+	function checkForErrors(infoTxt){
+		if (infoTxt.includes("errorMessage")){
+			stopCheckingForUpdates();
+			showInfoTxt(infoTxt, "red");
+			return true;
+		}
+		return false;
+	}
+	
+	function showInfoTxt(text, color){
+		var infoTxtDiv = document.getElementById("infoText");
+		infoTxtDiv.style.visibility = 'visible'; 	
+		infoTxtDiv.style.backgroundColor  = color; 
+		infoTxtDiv.style.width  = "100%"; 
+		infoTxtDiv.style.zIndex  = "-10"; 
+		infoTxtDiv.innerHTML = text + "<br>" + new Date();
+	}
+		
+	/// probably delete this 
+	function clearStuff(){
+		localStorage.clear();
+		document.getElementById("playerId").value = "";
+		document.getElementById("tableId").value = "";
+		document.getElementById("statusId").value = "";
+		document.getElementById("thePlayerName").value = "";
+		stopCheckingForUpdates();
 	}
 </script>
 </head>
@@ -220,43 +429,22 @@
     <div id = "player6" class="lowerRight"></div>
     <div id = "tableInfo" class = "center"></div>
     
-    
-    <div style= "visibility: visible;">
-    <br> Player ID: <input type="text" id="playerId" name="playerId">
-    <br> Player Name: <input type="text" id="thePlayerName" name="thePlayerName">    
-    <br> Table ID: <input type="text" id="tableId" name="tableId">
-    <br> Table Status Id: <input type="text" id="statusId" name="statusId">
-    <br> Current Table Bet: <input type="text" id="currentTableBet" name="currentTableBet">
-    <br> Current Player bet (amount already on table): <input type="text" id="currentPlayerBet" name="currentPlayerBet">
-    <br> Player Action: <input type="text" id="playerAction" name="playerAction">
-    <br> Player Action Amount: <input type="text" id="actionAmount" name="actionAmount">
-    </div>
+
+    <span style="visibility:hidden; witdth:100%;  z-index: -1; opacity: 0.6; filter: alpha(opacity=60);border:solid;">
+        Player ID: <input type="text"  size = '40' id="playerId" name="playerId">
+        Player Name: <input type="text" size = '40'  id="thePlayerName" name="thePlayerName">    
+        Table ID: <input type="text" size = '40'  id="tableId" name="tableId">
+        Table Status Id: <input type="text" id="statusId" name="statusId">
+        Current Table Bet: <input type="text" id="currentTableBet" name="currentTableBet">
+        Current Player bet: <input type="text" id="currentPlayerBet" name="currentPlayerBet">
+        Player Action: <input type="text" id="playerAction" name="playerAction">
+        Player Action Amount: <input type="text" id="actionAmount" name="actionAmount">
+        <input type = "button" onClick = "clearStuff()" value="CLEAR STUFF"/>
+        <input type = "button" onClick = "stopCheckingForUpdates()" value="STOP CHECKING FOR UPDATES"/>
+    </span>
+    <div style = "visibility:hidden;" id = "infoText">    
     </form>
 </body>
 <script>
-
-
-
-	 // example cards 
-//      function playCard(){
-//     	cards = "";
-//         cardStyle = cardMap.get("AH");
-//         cards += "<span style='"+cardStyle+"float:left;'></span>";
-//         cardStyle = cardMap.get("AH");
-//         cards += "<span style='"+backStyle1+"float:left;'></span>";
-//         cardStyle = cardMap.get("KS");
-//         cards += "<span style='"+backStyle2+"float:left;'></span>";
-//         cardStyle = cardMap.get("QC");
-//         cards += "<span style='"+backStyle3+"float:left;'></span>";
-//         cardStyle = cardMap.get("QH");
-//         cards += "<span style='"+backStyle4+"float:left;'></span>";
-//         var tableInfoDiv = document.getElementById("tableInfo");
-//         tableInfoDiv.innerHTML = cards;
-//        	var newDivWidth = tableInfoDiv.clientWidth;
-//        	var newDivWidth = tableInfoDiv.clientWidth;
-//        	tableInfoDiv.style.left =  "calc(50% - "+(.5*newDivWidth)+"px)";
-//        	tableInfoDiv.style.left =  "calc(50% - "+(.5*newDivWidth)+"px)";
-//      }
-//      playCard();
 </script>
 </html>

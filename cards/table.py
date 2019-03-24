@@ -148,7 +148,7 @@ class Table:
         self.deck.shuffle()
         self.pot = 0
         self.cards = []
-        self.winners = []
+        #self.winners = []
         
         indexOfDealer = 0
         for playerIndex, player in enumerate(self.players):
