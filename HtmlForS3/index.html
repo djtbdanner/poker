@@ -330,6 +330,7 @@
 		var newDivHeight = registerDiv.clientHeight;
 		registerDiv.style.left = "calc(50% - " + (.5 * newDivWidth) + "px)";
 		registerDiv.style.top = "0px";
+		registerDiv.style.zIndex  = "10";
  	}	
 	
 	
@@ -430,7 +431,7 @@
     <div id = "tableInfo" class = "center"></div>
     
 
-    <span style="visibility:hidden; witdth:100%;  z-index: -1; opacity: 0.6; filter: alpha(opacity=60);border:solid;">
+    <span style="visibility:visible; witdth:100%;  z-index:-100; opacity: 0.2; filter: alpha(opacity=20);border:solid;">
         Player ID: <input type="text"  size = '40' id="playerId" name="playerId">
         Player Name: <input type="text" size = '40'  id="thePlayerName" name="thePlayerName">    
         Table ID: <input type="text" size = '40'  id="tableId" name="tableId">
