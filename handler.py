@@ -32,6 +32,8 @@ def findTable(event, context):
     try:
         playerId = event['playerId']
         logger.debug("PlayerID : " + str(playerId))
+        ## TODO? put to default 
+        datalayer.resetUnusedTables(100)
         player = datalayer.getOrCreateSavedPlayer(playerId)
         table = datalayer.findATableForPlayer(player)
         status = 200
@@ -67,7 +69,7 @@ def makePlay(event, context):
             body = buildTableResult(table)
 
     except Exception as error:
-        logger.exception("Unable to make play." ,error)
+        logger.exception("Unable to make play." )
         status = 500
         body = str(error)
 

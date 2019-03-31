@@ -57,7 +57,12 @@
  	function processcreateOrFindPlayerResult(http) {
 		var o = JSON.parse(http.responseText);
 		var player = JSON.parse(o.body);
-		playerId = localStorage.setItem('pokerPlayerId', player.playerId);
+    	try {
+    		playerId = localStorage.setItem('pokerPlayerId', player.playerId);
+    	} catch(err) {
+    		console.log(err.message);
+    	}
+		
 		document.getElementById("playerId").value = player.playerId;
 		document.getElementById("thePlayerName").value = player.name;
 		greetPlayer(player)
@@ -183,8 +188,8 @@
 		document.getElementById("tableId").value = table.tableId;
 		document.getElementById("statusId").value = table.statusId;
  		thisPlayerId  = document.getElementById("playerId").value;
-  		localStorage.setItem('pokerTableId', table.tableId);
-  		localStorage.setItem('pokerTableStatusId', table.statusId);
+//   		localStorage.setItem('pokerTableId', table.tableId);
+//   		localStorage.setItem('pokerTableStatusId', table.statusId);
 
  		buildPlayers(table);
   		buildTable(table)
@@ -215,16 +220,28 @@
 	
 	function buildPlayerDiv(theDiv, player, currentPlayer, table){
 		
+		playerBet = player.currentBet;
+		tableBet = table.currentBet;
+		chips = player.chips;
+		amtToCheckOrCall = tableBet - playerBet;
+		
 		playerDiv = document.getElementById(theDiv);
 		playerDiv.style.width = "auto";
 		playerDiv.style.height = "auto";
 		htmlString = "<h2>" + player.name + "</h2>";
-		htmlString += "<p id = 'playerBet'><b>" + player.chips + "</b> chips, betting <b>" + player.currentBet + "</b> chips.</p>";
-
+		
+		htmlString += "<p id = 'playerBet'><b>" +chips + "</b> chips, bet <b>" + player.currentBet + "</b> chips";
+		
+		if (amtToCheckOrCall > 0){
+			htmlString += ", <b>" + amtToCheckOrCall + "</b> to call.</p>";
+		} else {
+			htmlString += ".</p>";
+		}
+		
 		if (player.dealer){
 			htmlString += "<p class='circle' style='background-color:blue;'>DEALER</p>";
 		}
-		if (player.turn){
+		if (player.turn && !currentPlayer){
 			htmlString += "<p class='circle' style='background-color:green;'>Player Turn</p>";
 		}
 
@@ -234,16 +251,23 @@
 		
 		var hasWinner = false;
 		table.winners.forEach(function(winner){
-			if(winner.playerId == player.playerId && table.cards.length === 0){
+			if(winner.playerId == player.playerId){
 				htmlString += "<p class='circle' style='background-color:red;'>WINNER</p>";
 			}
 			hasWinner = true;
 		})
 		
+		nonFoldedPlayerCount = 0;
+		table.players.forEach(function(player){
+			if(!player.folded){
+				nonFoldedPlayerCount = nonFoldedPlayerCount + 1;
+			}
+		})
+			
  		if (!player.folded && player.hand.cards.length > 0){
  			player.hand.cards.forEach (function(card){
  				cardStyle = cardMap.get(card.rank+card.suit)
- 				if (currentPlayer || hasWinner){
+ 				if (currentPlayer || (hasWinner && nonFoldedPlayerCount > 1)){
  					htmlString += "<span style='"+cardStyle+"display: inline-block;float:left;'></span>";
  				} else {
  					htmlString += "<span style='"+backStyle4+"display: inline-block;float:left;'></span>";
@@ -252,9 +276,9 @@
  		}
 		playerDiv.classList.add('showDiv');
 
-		if (currentPlayer){
-			htmlString+=requestPlayerInput(player, table, player.turn);
-		}
+ 		if (currentPlayer && !hasWinner){
+			htmlString+=requestPlayerInput(player, table, player.turn, amtToCheckOrCall);
+		} 		
 		
 		playerDiv.innerHTML = htmlString
 		
@@ -283,17 +307,23 @@
      }
     
 	function initPage() {
-		playerId = localStorage.getItem('pokerPlayerId');
-		tableId = localStorage.getItem('pokerTableId');
-		tableStatusId = localStorage.getItem('pokerTableStatusId');		
-		if (tableId != null && playerId != null && statusId != null){
-			document.getElementById("playerId").value = playerId;
-			document.getElementById("tableId").value = tableId;
-			document.getElementById("statusId").value = 0;// init page, want screen to refresh with current table data
-			callCheckForUpdates();
-			startCheckingForUpdates();
-			return;
+		playerId = null;
+		try{
+			playerId = localStorage.getItem('pokerPlayerId');
+		} catch(err) {
+			console.log(err.message);
 		}
+		
+// 		tableId = localStorage.getItem('pokerTableId');
+// 		tableStatusId = localStorage.getItem('pokerTableStatusId');		
+// 		if (tableId != null && playerId != null && statusId != null){
+// 			document.getElementById("playerId").value = playerId;
+// 			document.getElementById("tableId").value = tableId;
+// 			document.getElementById("statusId").value = 0;// init page, want screen to refresh with current table data
+// 			callCheckForUpdates();
+// 			startCheckingForUpdates();
+// 			return;
+// 		}
 
 		if (playerId == null) {
 			meetPlayer();
@@ -308,6 +338,7 @@
 		htmlString +=	"<p class='withMargin'>You have "+player.chips+" chips.</p>";
 		htmlString +=	"<p class='withMargin'>Are you ready to find a table?</p>";
 		htmlString +=	"<input class='button' type='button' id='findTableButton' name='findTableButton' value='FIND A TABLE' onClick='findATable()' />";
+		htmlString +=	"<input class='button' type='button' id='resetMe' name='resetMe' value='RESET' onClick='clearStuff();clearRegisterDiv();initPage();' />";
 		htmlString +=	"<input class='button' type='button' value = 'CANCEL' onClick='clearRegisterDiv()' />";
 		// images is encoded 1x1 px transparent using to get the script to run on this div
 		htmlString +=	"<img src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7' onLoad='focusOnElement(\"findTableButton\");' />";
@@ -315,7 +346,7 @@
 	}
 	
 	function meetPlayer(){
-		htmlString = "<h1 class='withMargin'> Hello player, what is your name?</h1>";
+		htmlString = "<h1 class='withMargin'> Hello, what is your name?</h1>";
 		htmlString +=	"<input type='text' class='withMargin' size = '40' id='playerName' name='playerName' onChange='focusOnElement(\"playerButton\")'/><br>";
 		htmlString +=	"<input class='button' type='button' value = 'SUBMIT NAME' onClick='callCreateOrFindPlayer()' />";
 		htmlString +=	"<img src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7' onLoad='focusOnElement(\"playerName\");' />";
@@ -323,22 +354,16 @@
  	}
 	
 	var makePlayInterval;
-	function requestPlayerInput(player, table, isTurn){
+	function requestPlayerInput(player, table, isTurn, amtToCheckOrCall){
 		
-		playerBet = player.currentBet;
-		tableBet = table.currentBet;
-		chips = player.chips;
+		if (!isTurn){
+			return "";
+		}
+		
 		defaultAction = "CALL";
-		amtToCheckOrCall = tableBet - playerBet;
 		if (amtToCheckOrCall < 1){
 			amtToCheckOrCall = 0;
 			defaultAction="CHECK";
-		}
-		
-		if (!isTurn){
-			htmlString =  "<input type='range' min='0' max='"+chips+"' value='"+amtToCheckOrCall+"' class='slider'  disabled id='myRange'><br>";
-			htmlString += "<input class='button' type='button' id = 'actionButton' value = '.....' disabled />";
-			return htmlString;
 		}
 		
 		stopCheckingForUpdates();
@@ -348,34 +373,22 @@
 		htmlString =  "<input type='range' min='0' max='"+chips+"' value='"+amtToCheckOrCall+"' class='slider' id='myRange' onClick='onChangeSlider(this, "+chips+", "+amtToCheckOrCall+")'><br>";
 		htmlString += "<input class='button' type='button' id = 'actionButton' value = '"+defaultAction+"' onClick='callMakePlay()' />";
 		
-		makePlayInterval = setTimeout(callMakePlay, 20000);
+		makePlayInterval = setTimeout(callMakePlay, 20000);// play default automatically after 20 seconds
 		return htmlString;
-		
-/* 		document.getElementById("actionAmount").value = amtToCheck;
-		//htmlString = "<h2 class='withMargin'>It's your turn "+player.name+"</h2>";
-		//htmlString += "<p>Currently bet: " + playerBet + "; table bet: " + tableBet + "; pot: " +table.pot + "; to check: " + amtToCheck +".</p>"; 
-		htmlString += "<br><input type='number' id='betSelector' name='betSelector' min='0' max='100' value='" +amtToCheck+ "' onChange='processActionAmount(\"betButton\", this, "+amtToCheck+")'><br>";
-		htmlString += "<input class='button' type='button' id = 'betButton' value = 'BET' disabled onClick='setActionAndCall(\"bet\")' />";
-		htmlString += "<input class='button' type='button' id = 'checkButton' value = 'CHECK' onClick='setActionAndCall(\"check\")' />";
-		htmlString += "<input class='button' type='button' id = 'foldButton' value = 'FOLD' onClick='setActionAndCall(\"fold\")' />";
-		htmlString += "<img src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7' onLoad='focusOnElement(\"betSelector\");' />";
-		return htmlString; */
-		//var registerDiv = document.getElementById("register");
-		//registerDiv.classList.add('showDiv');
-		//registerDiv.innerHTML = htmlString;
-		//var newDivWidth = registerDiv.clientWidth;
-		//var newDivHeight = registerDiv.clientHeight;
-		////registerDiv.style.left = "calc(50% - " + (.5 * newDivWidth) + "px)";
-		//registerDiv.style.top = "0px";
-		//registerDiv.style.zIndex  = "10";
  	}	
-	
+
 	function onChangeSlider(slider, playerChips, amtToCheckOrCall){
-		//alert(slider.value);
 		betting = slider.value;
-		htmlString = "<b>" + playerChips + "</b> chips, betting <b>" + betting + "</b> chips.";
+		htmlString = "<b>" + playerChips + "</b> chips, bet <b>" + betting + "</b> chips";
+		if (amtToCheckOrCall > 0){
+			htmlString += ", <b>" + amtToCheckOrCall + "</b> to call.";
+		} else {
+			htmlString += ".";
+		}
+		
 		betElem = document.getElementById("playerBet");
 		betElem.innerHTML = htmlString;
+		
 		
 		defaultAction = "CALL";
 		if (amtToCheckOrCall == 0){
@@ -385,34 +398,21 @@
 		theButton = betElem = document.getElementById("actionButton");
 		if (betting < amtToCheckOrCall){
 			theAction = "FOLD";
+			slider.value = 0;
 		} else if (betting > amtToCheckOrCall){
 			theAction = "BET";
 		} else {
 			theAction = defaultAction;
 		}
+		theButton.value=theAction;
 		document.getElementById("actionAmount").value = betting;
 		document.getElementById("playerAction").value = theAction;
 	}
-	
-/* 	// for bet action div
-	function processActionAmount(theElementId, selector, amtToCheck){
-		e = document.getElementById(theElementId);
-		amount = selector.value;
-		document.getElementById("actionAmount").value = amount;
-		if (e){
-			if(amount > amtToCheck){
-				e.disabled = false;
-			} else {
-				e.disabled = true;
-			}
-		}
-	} */
 	
 	function setActionAndCall(){
 		callMakePlay();
 		clearRegisterDiv();
 	}
-	
 	
 	function focusOnElement(theElementId){
 		e = document.getElementById(theElementId);
@@ -491,7 +491,7 @@
     <div id = "tableInfo" class = "center"></div>
     
 
-    <span style="visibility:visible; witdth:100%;  z-index:-100; opacity: 0.2; filter: alpha(opacity=20);border:solid;">
+    <span style="visibility:hidden; witdth:100%;  z-index:-100; opacity: 0.2; filter: alpha(opacity=20);border:solid;">
         Player ID: <input type="text"  size = '40' id="playerId" name="playerId">
         Player Name: <input type="text" size = '40'  id="thePlayerName" name="thePlayerName">    
         Table ID: <input type="text" size = '40'  id="tableId" name="tableId">

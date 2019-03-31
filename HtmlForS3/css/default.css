@@ -39,19 +39,7 @@
     	box-shadow: 0px 1px 10px black, inset 0px 0px 5px black;
     }
 
-    input[type=number] {
-    	padding: 0;
-    	height: 30px;
-    	position: relative;
-    	left: 0;
-    	outline: none;
-    	border: 1px solid #cdcdcd;
-    	border-color: #4CAF50; /* Green */
-    	background-color: white;
-    	font-size: 16px;
-    }
-
-    input[type=textbox] {
+    input {
     	padding: 0;
     	height: 30px;
     	position: relative;
@@ -76,6 +64,7 @@
 
    h4 {
     	background-color: white; 
+    	margin-top: 2px;
     	border: none;
     	color: black;
     	text-align: center;
@@ -89,7 +78,7 @@
     	background-color: #4CAF50; /* Green */
     	border: none;
     	color: white;
-    	margin: 2px;
+    	margin-top: 2px;
     	padding: 4px;
     	text-align: center;
     	text-decoration: none;
@@ -113,7 +102,7 @@
     	background-color: gray; 
     	border: none;
     	color: black;
-    	margin: 2px;
+    	margin-top: 2px;
     	padding: 4px;
     	text-align: center;
     	text-decoration: none;
@@ -171,6 +160,7 @@
 	}
 	
 	.slider {
+	  margin-top:5px;	
 	  -webkit-appearance: none;
 	  width: 100%;
 	  height: 25px;

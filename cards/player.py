@@ -26,7 +26,7 @@ class PlayerAction():
     FOLD = 'fold'
 
 class Player:
-    def __init__(self, name="A Player with no name", hand = None, playerId = None,  chips=100, dealer=False, folded = False, currentBet = 0, currentAction=PlayerAction.NONE, turn=False, turnStartTime=None):
+    def __init__(self, name="A Player with no name", hand = None, playerId = None,  chips=100, dealer=False, folded = False, currentBet = 0, currentAction=PlayerAction.NONE, turn=False, turnStartTime=None, isInformedHandComplete=False):
         self.hand = hand if hand is not None else Hand()
         self.name = name  
         self.playerId=playerId if playerId is not None else str(uuid.uuid4())
@@ -37,6 +37,7 @@ class Player:
         self.currentAction = currentAction
         self.turn = turn
         self.turnStartTime = turnStartTime
+        self.isInformedHandComplete = isInformedHandComplete
 
     def showHand(self):
         myCards = self.name + ' : '

@@ -11,7 +11,7 @@ class Table:
     TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
     # will remove player if he or she hasn't played in time limit
     PLAYER_TURN_LIMIT=300
-    def __init__(self, players=None, deck = None, pot = 0,  cards=None, tableId=None, blind = 2, currentBet = 0, statusId=None, winners=None):
+    def __init__(self, players=None, deck = None, pot = 0,  cards=None, tableId=None, blind = 2, currentBet = 0, statusId=None, winners=None, updateTs=None):
         self.players =  players if players is not None else []
         if deck is not None:
             self.deck = deck 
@@ -27,7 +27,20 @@ class Table:
         
         self.statusId = statusId if statusId is not None else 0
         self.winners = winners if winners is not None else []
-        
+        self.updateTs = updateTs
+    
+    def resetTable(self):
+        self.players = []
+        self.deck = None
+        self.pot = 0  
+        self.cards=None 
+        self.blind = 2
+        self.currentBet = 0 
+        self.statusId=0 
+        self.winners=None 
+        self.updateTs=None
+        logger.warn(" Table successfully reset values")
+
     def setDealerAtRandom(self):
         playerIndex = randint(0, len(self.players) -1)
         logger.debug("Dealer Selected")
@@ -83,7 +96,7 @@ class Table:
         player.currentBet =  player.currentBet + chips
 #         logger.info(' {0} bets {1} chip(s), for a total of {2} this round'.format(player.name, chips, player.currentBet))
         if player.folded:
-            logger.warn(player.name + " asked to bet or call, but is folded, bet will not be made")
+            logger.warn("Player asked to bet or call, but is folded, bet will not be made")
             return
         logger.info('in bet or call 2')
         player.chips = player.chips - chips
@@ -153,12 +166,13 @@ class Table:
         self.deck.shuffle()
         self.pot = 0
         self.cards = []
-        #self.winners = []
+        self.winners = []
         
         indexOfDealer = 0
         for playerIndex, player in enumerate(self.players):
             player.hand.cards = []
             player.folded = False
+            player.isInformedHandComplete = False
             if player.dealer:
                 indexOfDealer = self.getNextPlayerIndex(playerIndex)
         
@@ -188,7 +202,7 @@ class Table:
         
     def isRoundComplete(self):
         '''
-        Check to see that all bets are completed for the round of betting
+        Check to see that all bets are completed for the round of betting and players notified of winners
         '''
         for player in self.players:
             if player.currentAction == PlayerAction.NONE and not player.folded:
@@ -286,6 +300,12 @@ class Table:
             return True
         return False
     
+    def allPlayersKnowHandIsComplete(self):
+        for player in self.players:
+            if not player.folded and not player.isInformedHandComplete:
+                return False
+            
+        return True
     
     def haveAllButOnePlayerFolded(self):
         countOfPlayers = 0

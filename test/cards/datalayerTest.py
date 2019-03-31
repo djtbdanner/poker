@@ -6,6 +6,7 @@ from deck import Deck
 import logging
 import string
 import random
+import time
 
 class TestDataLayer(unittest.TestCase):
     
@@ -80,20 +81,42 @@ class TestDataLayer(unittest.TestCase):
         datalayer.deleteTable(tableII)
          
     def testFindATableForPlayer(self):
-        players = buildPlayers(15)
+        players = buildPlayers(8)
         table = datalayer.findATableForPlayer(players[0])
         firstTableId = table.tableId
          
-        for index in range(1,10):
+        for index in range(1,7):
             table = datalayer.findATableForPlayer(players[index])
             self.assertTrue(players[index] in table.players)
             self.assertEquals(table.tableId, firstTableId)
  
-        table2 = datalayer.findATableForPlayer(players[11])
+        table2 = datalayer.findATableForPlayer(players[7])
         self.assertNotEquals(table2.tableId, firstTableId)
          
         datalayer.deleteTable(table)
         datalayer.deleteTable(table2)
+        
+    def testResetTables(self):
+        players = buildPlayers(1)
+        table = datalayer.findATableForPlayer(players[0])
+        firstTableId = table.tableId
+        table.blind = 5
+        table.currentBet = 1000
+        datalayer.updateTable(table)
+        
+        table2 = datalayer.getOrCreateSavedTable(firstTableId)
+        self.assertEquals(table2.tableId, firstTableId)
+        self.assertEqual(1, len(table.players))
+        datalayer.resetUnusedTables(4)
+        
+        logging.log(logging.INFO, "Waiting 5 seconds to see if player is automatically evicted")
+        time.sleep(5)
+        table3 = datalayer.getOrCreateSavedTable(firstTableId)
+        self.assertEqual(1, len(table3.players))
+        self.assertEquals(table3.tableId, firstTableId)
+        
+        datalayer.updateTable(table)
+        datalayer.deleteTable(table)
         
     def test_cards_on_table_stay (self):
         
@@ -106,13 +129,13 @@ class TestDataLayer(unittest.TestCase):
         cardsInDeck = table.deck
         originalTableId = table.tableId
         
-        players = buildPlayers(5)
+        players = buildPlayers(4)
         for player in players:
             table = datalayer.findATableForPlayer(player)
             self.assertEqual(len(cardsInDeck.cards), len(table.deck.cards), "Deck should be the same length") 
             self.assertEqual(originalTableId, table.tableId, "And it should be the same table") 
         
-        count = 6
+        count = 5
         self.assertEqual(count, len(table.players))
         
         

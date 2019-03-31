@@ -9,7 +9,7 @@ logger = logging.getLogger()
 def makePlay(player, table, playerAction, actionAmount, currentStatus):
     try:
         if playerAction.lower() == "fold":
-            logger.info("Player {0} will fold.".format(player.name))
+            logger.info("Player  will fold.")
             table.playerFold(player)
         else:
             actionAmount = int(actionAmount)
@@ -41,14 +41,7 @@ def makePlay(player, table, playerAction, actionAmount, currentStatus):
         else:
             logger.info("Every one has folded, processing winners")   
             processWinners(table)
-
-        logger.info("check to see if hand is complete") 
-        if table.isHandComplete():
-            logger.info("hand is complete, now processing")
-            table.prepareForNextHand()
-            while not table.doAllPlayersHaveTwoCards():
-                table.dealRound()
-                         
+#                          
         datalayer.updateTable(table)
         logger.info("make Play - table updated and returning.")
         return table
@@ -62,8 +55,8 @@ def processWinners(table):
         player.chips = player.chips + winTotal
     table.winners = winnerList
 
-
 def checkForAndRemoveMissingPlayers(table):
+    
     for player in table.players:
         if player.turn:
             startTime = datetime.strptime(player.turnStartTime, table.TIME_FORMAT)
@@ -74,11 +67,24 @@ def checkForAndRemoveMissingPlayers(table):
                 table.removePlayer(player)
 
 def checkForUpdates(table, player, currentStatus):
+    
+    checkForAndRemoveMissingPlayers(table)
+    
     if len(table.players) > 1:
         if not table.hasDealer():
             table.setDealerAtRandom()
         while not table.doAllPlayersHaveTwoCards():
             table.dealRound()
-    checkForAndRemoveMissingPlayers(table)
+            
+        logger.info("check to see if hand is complete") 
+        if table.isHandComplete():
+          
+            if table.allPlayersKnowHandIsComplete():
+                table.prepareForNextHand()
+                while not table.doAllPlayersHaveTwoCards():
+                    table.dealRound()
+            logger.info("hand is complete, now adding player to list that knows it is complete")
+            player.isInformedHandComplete = True
+
     datalayer.updateTable(table)
     return table

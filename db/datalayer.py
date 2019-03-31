@@ -9,6 +9,8 @@ from table import Table
 import json
 import db.jsonobj as jsob
 import platform
+from datetime import datetime
+from datetime import timedelta
 logger = logging.getLogger()
 
 playerTableName="PokerPlayer"
@@ -73,7 +75,7 @@ def deletePlayer(player):
                 }
         )
         logger.debug("Player deleted.")
-    except Exception as error:
+    except Exception:
         logger.exception("Unable to delete player.")
         
         
@@ -97,13 +99,14 @@ def getOrCreateSavedTable(tableId):
                  }
             )             
         return table
-    except Exception as error:
-        logger.exception("Unable to process table." + str(error))
+    except Exception:
+        logger.exception("Unable to process table.")
         
 
 def updateTable(table):
     try:
         logger.info("Attempting to update table :" + str(table.tableId))
+        table.updateTs = datetime.now().strftime(table.TIME_FORMAT)
         jsondata = json.dumps(table,default=jsob.convert_to_dict,indent=None, sort_keys=False)
         pokerTable.put_item(
                 Item={
@@ -128,6 +131,23 @@ def deleteTable(table):
     except Exception as error:
         logger.exception("Unable to delete Table." + str(error))
 
+def resetUnusedTables(secondsToLiveWithNoAction=60):
+    logger.info("Checking for tables that should be cleared....")
+    response = pokerTable.scan()
+    if 'Items' in response and len(response["Items"]) > 0:
+        for i in response['Items']:
+            table = json.loads(i["pokerTable"], object_hook=jsob.dict_to_obj)
+            logger.info("Found a table to clear :" + str(table))
+            if table.updateTs is not None and len(table.players) > 1:
+                startTime = datetime.strptime(table.updateTs, table.TIME_FORMAT)
+                timeLimit = startTime + timedelta(seconds=secondsToLiveWithNoAction)
+                now = datetime.now()
+                if now > timeLimit:
+                    logger.info("Table has not seen action for 60 seconds, resetting table...")
+                    table.resetTable()
+                    updateTable(table)
+                
+                
 def findATableForPlayer(player):
     try:
         #TODO - see if there is a more elegant way to search tables
