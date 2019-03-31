@@ -27,7 +27,7 @@ pokerTable = dynamodb.Table(tableTableName)
 
 def getOrCreateSavedPlayer(playerId, playerName="Poker Player"):
     try:
-        logger.debug("Attempting to retrieve player :" + str(playerId))
+        logger.debug("Attempting to retrieve player")
         response = playerTable.get_item(Key={'playerId':playerId})
         if 'Item' in response:
             playerJSON = response['Item']['player']
@@ -51,7 +51,7 @@ def getOrCreateSavedPlayer(playerId, playerName="Poker Player"):
 
 def updatePlayer(player):
     try:
-        logger.debug("Attempting to update player :" + str(player.playerId))
+        logger.debug("Attempting to update player ")
         jsondata = json.dumps(player,default=jsob.convert_to_dict,indent=None, sort_keys=False)
         playerTable.put_item(
                 Item={
@@ -66,7 +66,7 @@ def updatePlayer(player):
         
 def deletePlayer(player):
     try:
-        logger.debug("Attempting to delete player :" + str(player.playerId))
+        logger.debug("Attempting to delete player.")
         playerTable.delete_item(
             Key={
                 'playerId': player.playerId
@@ -74,12 +74,12 @@ def deletePlayer(player):
         )
         logger.debug("Player deleted.")
     except Exception as error:
-        logger.exception("Unable to delete player." + str(error))
+        logger.exception("Unable to delete player.")
         
         
 def getOrCreateSavedTable(tableId):
     try:
-        logger.debug("Attempting to retrieve table :" + str(tableId))
+        logger.debug("Attempting to retrieve table :")
         response = pokerTable.get_item(Key={'pokerTableId':tableId})
         if 'Item' in response:
             tableJSON = response['Item']['pokerTable']
@@ -87,7 +87,7 @@ def getOrCreateSavedTable(tableId):
             table = json.loads(tableJSON, object_hook=jsob.dict_to_obj)              
         else:
             table = Table()
-            logger.debug("Created Poker Table :" + str(table) + " and saving to database!")
+            logger.debug("Created Poker Table and saving to database!")
             jsondata = json.dumps(table,default=jsob.convert_to_dict,indent=None, sort_keys=False)
             logger.info("Table JSON: " + jsondata)
             pokerTable.put_item(
@@ -131,7 +131,7 @@ def deleteTable(table):
 def findATableForPlayer(player):
     try:
         #TODO - see if there is a more elegant way to search tables
-        logger.debug("finding a table for player :" + str(player))
+        logger.debug("finding a table for player.")
         fe = Attr('pokerTable').exists()
         pe = "pokerTable"
         response = pokerTable.scan(
@@ -144,8 +144,8 @@ def findATableForPlayer(player):
             for i in response['Items']:
                 tableTry = json.loads(i["pokerTable"], object_hook=jsob.dict_to_obj)
                 logger.info("Found a table for player :" + str(tableTry))
-                if (len(tableTry.players) < 10):
-                    logger.info("Table has less than 10 players :" + str(tableTry))
+                if (len(tableTry.players) < 7):
+                    logger.info("Table has less than 7 players :" + str(tableTry))
                     table = tableTry
                     foundATable = True
                     break

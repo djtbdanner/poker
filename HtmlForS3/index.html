@@ -50,6 +50,7 @@
  		};
  		http.onerror = function() {
  			alert("Unfortunately, we've experienced an error." + http.responseText);
+ 			stopCheckingForUpdates();
  		}
  	}
      
@@ -96,7 +97,6 @@
 	
 	function processFindTableReply(http) {
 		if (checkForErrors(http.responseText)){
-			alert("Unfortunately there were errors in processing.");
 			return;
 		}
 		var o = JSON.parse(http.responseText);
@@ -104,14 +104,26 @@
 		processTable(table);
 		startCheckingForUpdates();
 	}	
-	var updateCheck;
 	
+	var updateCheck = null;
 	function startCheckingForUpdates(){
-		updateCheck = setInterval(callCheckForUpdates,1000);
+		if (updateCheck == null){
+			updateCheck = setInterval(callCheckForUpdates, 1000);
+		}
 	}
 	
 	function stopCheckingForUpdates(){
-		clearInterval(updateCheck);
+		if (updateCheck != null){
+			clearInterval(updateCheck);
+		}
+		updateCheck = null;
+	}
+	
+	function pauseCheckingForUpdates(seconds){
+		//alert("pause checking for updates")
+		stopCheckingForUpdates();
+		seconds = seconds * 1000;
+		setTimeout(startCheckingForUpdates, seconds);
 	}
 	
 	function callCheckForUpdates() {
@@ -120,6 +132,7 @@
 		tableStatusId = document.getElementById("statusId").value;
 		if (isEmpty(playerId) || isEmpty(tableId) || isEmpty(tableStatusId)){
 			alert("missing some ids");
+			stopCheckingForUpdates();
 			return;
 		}
 		var params = {
@@ -132,7 +145,6 @@
 	
 	function processCheckUpdateReply(http) {
 		if (checkForErrors(http.responseText)){
-			alert("Unfortunately there were errors in processing.");
 			return;
 		}
 		var o = JSON.parse(http.responseText);
@@ -141,12 +153,12 @@
 	}		
 	
 	function callMakePlay() {
+		clearInterval(makePlayInterval)
 		playerId = document.getElementById("playerId").value;
 		tableId = document.getElementById("tableId").value;
 		tableStatusId = document.getElementById("statusId").value;
 		actionAmount = document.getElementById("actionAmount").value;
 		playerAction = document.getElementById("playerAction").value;
-
 		var params = {
 				playerId : playerId,
 				tableId : tableId,
@@ -169,13 +181,10 @@
  		}
 
 		document.getElementById("tableId").value = table.tableId;
- 		document.getElementById("statusId").value = table.statusId;
- 		
- 		localStorage.setItem('pokerTableId', table.tableId);
- 		
+		document.getElementById("statusId").value = table.statusId;
  		thisPlayerId  = document.getElementById("playerId").value;
- 		localStorage.setItem('pokerTableId', table.tableId);
- 		localStorage.setItem('pokerTableStatusId', table.statusId);
+  		localStorage.setItem('pokerTableId', table.tableId);
+  		localStorage.setItem('pokerTableStatusId', table.statusId);
 
  		buildPlayers(table);
   		buildTable(table)
@@ -210,7 +219,7 @@
 		playerDiv.style.width = "auto";
 		playerDiv.style.height = "auto";
 		htmlString = "<h2>" + player.name + "</h2>";
-		htmlString += "<p>" + player.chips + " chips, betting " + player.currentBet + " chips.</p>";
+		htmlString += "<p id = 'playerBet'><b>" + player.chips + "</b> chips, betting <b>" + player.currentBet + "</b> chips.</p>";
 
 		if (player.dealer){
 			htmlString += "<p class='circle' style='background-color:blue;'>DEALER</p>";
@@ -218,21 +227,23 @@
 		if (player.turn){
 			htmlString += "<p class='circle' style='background-color:green;'>Player Turn</p>";
 		}
-		
+
 		if (player.folded){
 			htmlString += "<p class='circle' style='background-color:gray;'>Player Folds</p>";
 		}
 		
+		var hasWinner = false;
 		table.winners.forEach(function(winner){
 			if(winner.playerId == player.playerId && table.cards.length === 0){
 				htmlString += "<p class='circle' style='background-color:red;'>WINNER</p>";
 			}
+			hasWinner = true;
 		})
 		
  		if (!player.folded && player.hand.cards.length > 0){
  			player.hand.cards.forEach (function(card){
  				cardStyle = cardMap.get(card.rank+card.suit)
- 				if (currentPlayer){
+ 				if (currentPlayer || hasWinner){
  					htmlString += "<span style='"+cardStyle+"display: inline-block;float:left;'></span>";
  				} else {
  					htmlString += "<span style='"+backStyle4+"display: inline-block;float:left;'></span>";
@@ -240,10 +251,15 @@
  			})
  		}
 		playerDiv.classList.add('showDiv');
+
+		if (currentPlayer){
+			htmlString+=requestPlayerInput(player, table, player.turn);
+		}
+		
 		playerDiv.innerHTML = htmlString
 		
-		if (player.turn && currentPlayer){
-			requestPlayerInput(player, table);
+		if (hasWinner){
+			pauseCheckingForUpdates(10);
 		}
 	}
 	
@@ -255,7 +271,7 @@
   		if (table.cards.length > 0){
    			table.cards.forEach (function(card){
    				cardStyle = cardMap.get(card.rank+card.suit)
-   				cardsHTML += "<span style='"+cardStyle+"display: inline-block;float:left;'></span>";
+   				cardsHTML += "<span style='"+cardStyle+"display: inline-block;float:right;'></span>";
   			})
 		}
        	
@@ -306,35 +322,79 @@
 		showHtmlInRegisterDiv(htmlString);
  	}
 	
-	function requestPlayerInput(player, table){
+	var makePlayInterval;
+	function requestPlayerInput(player, table, isTurn){
 		
-		stopCheckingForUpdates();
 		playerBet = player.currentBet;
 		tableBet = table.currentBet;
-		amtToCheck = tableBet - playerBet;
-		if (amtToCheck < 1){
-			amtToCheck = 0;
+		chips = player.chips;
+		defaultAction = "CALL";
+		amtToCheckOrCall = tableBet - playerBet;
+		if (amtToCheckOrCall < 1){
+			amtToCheckOrCall = 0;
+			defaultAction="CHECK";
 		}
-		document.getElementById("actionAmount").value = amtToCheck;
-		htmlString = "<h2 class='withMargin'>It's your turn "+player.name+"</h2>";
-		htmlString += "<p>Currently bet: " + playerBet + "; table bet: " + tableBet + "; pot: " +table.pot + "; to check: " + amtToCheck +".</p>"; 
-		htmlString += "<input type='number' id='betSelector' name='betSelector' min='0' max='100' value='" +amtToCheck+ "' onChange='processActionAmount(\"betButton\", this, "+amtToCheck+")'><br>";
+		
+		if (!isTurn){
+			htmlString =  "<input type='range' min='0' max='"+chips+"' value='"+amtToCheckOrCall+"' class='slider'  disabled id='myRange'><br>";
+			htmlString += "<input class='button' type='button' id = 'actionButton' value = '.....' disabled />";
+			return htmlString;
+		}
+		
+		stopCheckingForUpdates();
+		document.getElementById("actionAmount").value = amtToCheckOrCall;
+		document.getElementById("playerAction").value = defaultAction;
+		
+		htmlString =  "<input type='range' min='0' max='"+chips+"' value='"+amtToCheckOrCall+"' class='slider' id='myRange' onClick='onChangeSlider(this, "+chips+", "+amtToCheckOrCall+")'><br>";
+		htmlString += "<input class='button' type='button' id = 'actionButton' value = '"+defaultAction+"' onClick='callMakePlay()' />";
+		
+		makePlayInterval = setTimeout(callMakePlay, 20000);
+		return htmlString;
+		
+/* 		document.getElementById("actionAmount").value = amtToCheck;
+		//htmlString = "<h2 class='withMargin'>It's your turn "+player.name+"</h2>";
+		//htmlString += "<p>Currently bet: " + playerBet + "; table bet: " + tableBet + "; pot: " +table.pot + "; to check: " + amtToCheck +".</p>"; 
+		htmlString += "<br><input type='number' id='betSelector' name='betSelector' min='0' max='100' value='" +amtToCheck+ "' onChange='processActionAmount(\"betButton\", this, "+amtToCheck+")'><br>";
 		htmlString += "<input class='button' type='button' id = 'betButton' value = 'BET' disabled onClick='setActionAndCall(\"bet\")' />";
 		htmlString += "<input class='button' type='button' id = 'checkButton' value = 'CHECK' onClick='setActionAndCall(\"check\")' />";
 		htmlString += "<input class='button' type='button' id = 'foldButton' value = 'FOLD' onClick='setActionAndCall(\"fold\")' />";
 		htmlString += "<img src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7' onLoad='focusOnElement(\"betSelector\");' />";
-		var registerDiv = document.getElementById("register");
-		registerDiv.classList.add('showDiv');
-		registerDiv.innerHTML = htmlString;
-		var newDivWidth = registerDiv.clientWidth;
-		var newDivHeight = registerDiv.clientHeight;
-		registerDiv.style.left = "calc(50% - " + (.5 * newDivWidth) + "px)";
-		registerDiv.style.top = "0px";
-		registerDiv.style.zIndex  = "10";
+		return htmlString; */
+		//var registerDiv = document.getElementById("register");
+		//registerDiv.classList.add('showDiv');
+		//registerDiv.innerHTML = htmlString;
+		//var newDivWidth = registerDiv.clientWidth;
+		//var newDivHeight = registerDiv.clientHeight;
+		////registerDiv.style.left = "calc(50% - " + (.5 * newDivWidth) + "px)";
+		//registerDiv.style.top = "0px";
+		//registerDiv.style.zIndex  = "10";
  	}	
 	
+	function onChangeSlider(slider, playerChips, amtToCheckOrCall){
+		//alert(slider.value);
+		betting = slider.value;
+		htmlString = "<b>" + playerChips + "</b> chips, betting <b>" + betting + "</b> chips.";
+		betElem = document.getElementById("playerBet");
+		betElem.innerHTML = htmlString;
+		
+		defaultAction = "CALL";
+		if (amtToCheckOrCall == 0){
+			defaultAction = "CHECK";
+		}
+		theAction = defaultAction;
+		theButton = betElem = document.getElementById("actionButton");
+		if (betting < amtToCheckOrCall){
+			theAction = "FOLD";
+		} else if (betting > amtToCheckOrCall){
+			theAction = "BET";
+		} else {
+			theAction = defaultAction;
+		}
+		document.getElementById("actionAmount").value = betting;
+		document.getElementById("playerAction").value = theAction;
+	}
 	
-	// for bet action div
+/* 	// for bet action div
 	function processActionAmount(theElementId, selector, amtToCheck){
 		e = document.getElementById(theElementId);
 		amount = selector.value;
@@ -346,10 +406,9 @@
 				e.disabled = true;
 			}
 		}
-	}
+	} */
 	
-	function setActionAndCall(theAction){
-		document.getElementById("playerAction").value = theAction;
+	function setActionAndCall(){
 		callMakePlay();
 		clearRegisterDiv();
 	}
@@ -389,6 +448,7 @@
 
 	function checkForErrors(infoTxt){
 		if (infoTxt.includes("errorMessage")){
+			alert("Unfortunately there were errors in processing.");
 			stopCheckingForUpdates();
 			showInfoTxt(infoTxt, "red");
 			return true;

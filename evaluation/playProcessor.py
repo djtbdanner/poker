@@ -1,6 +1,8 @@
 import evaluation.processor as processor
 import db.datalayer as datalayer
 import logging
+from datetime import datetime
+from datetime import timedelta
 logger = logging.getLogger()
 
 
@@ -13,7 +15,7 @@ def makePlay(player, table, playerAction, actionAmount, currentStatus):
             actionAmount = int(actionAmount)
             currentTableBet = table.currentBet
             playerCurrentBet = player.currentBet
-            logger.info("Making play of actionAmount {0}, currentTableBet {1}, playerCurrentBet{2} for player {3}".format(actionAmount, currentTableBet, playerCurrentBet, player))
+            logger.info("Making play ")
             if ((actionAmount + playerCurrentBet) < currentTableBet):
                 logger.warn("Player must call or bet more than current table bet.")
                 raise ValueError("Player must call or bet more than current table bet.")
@@ -61,11 +63,22 @@ def processWinners(table):
     table.winners = winnerList
 
 
+def checkForAndRemoveMissingPlayers(table):
+    for player in table.players:
+        if player.turn:
+            startTime = datetime.strptime(player.turnStartTime, table.TIME_FORMAT)
+            timeLimit = startTime + timedelta(seconds=table.PLAYER_TURN_LIMIT)
+            now = datetime.now()
+            if now > timeLimit:
+                logger.info("player removed from table after timeout")
+                table.removePlayer(player)
+
 def checkForUpdates(table, player, currentStatus):
-    if len(table.players) > 2:
+    if len(table.players) > 1:
         if not table.hasDealer():
             table.setDealerAtRandom()
         while not table.doAllPlayersHaveTwoCards():
             table.dealRound()
+    checkForAndRemoveMissingPlayers(table)
     datalayer.updateTable(table)
     return table
