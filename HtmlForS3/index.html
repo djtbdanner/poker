@@ -7,7 +7,6 @@
 <link rel="stylesheet" type="text/css" href="css/default.css">
 <script>
     var url = 'https://fvl7shd96d.execute-api.us-east-1.amazonaws.com/dev/';
-    
     var cardMap = new Map();
     function buildCardMap(){
         var test = document.getElementById("test");
@@ -57,12 +56,11 @@
  	function processcreateOrFindPlayerResult(http) {
 		var o = JSON.parse(http.responseText);
 		var player = JSON.parse(o.body);
-    	try {
-    		playerId = localStorage.setItem('pokerPlayerId', player.playerId);
-    	} catch(err) {
-    		console.log(err.message);
+    	if(player.playerId === undefined || player.name === ""){
+    		meetPlayer();
+    		return;
     	}
-		
+   		playerId = localStorage.setItem('pokerPlayerId', player.playerId);
 		document.getElementById("playerId").value = player.playerId;
 		document.getElementById("thePlayerName").value = player.name;
 		greetPlayer(player)
@@ -241,8 +239,10 @@
 		if (player.dealer){
 			htmlString += "<p class='circle' style='background-color:blue;'>DEALER</p>";
 		}
-		if (player.turn && !currentPlayer){
-			htmlString += "<p class='circle' style='background-color:green;'>Player Turn</p>";
+		if (player.turn){
+			if (!currentPlayer){
+				htmlString += "<p class='circle' style='background-color:green;'>Player Turn</p>";
+			}
 		}
 
 		if (player.folded){
@@ -370,12 +370,14 @@
 		document.getElementById("actionAmount").value = amtToCheckOrCall;
 		document.getElementById("playerAction").value = defaultAction;
 		
-		htmlString =  "<input type='range' min='0' max='"+chips+"' value='"+amtToCheckOrCall+"' class='slider' id='myRange' onClick='onChangeSlider(this, "+chips+", "+amtToCheckOrCall+")'><br>";
+		htmlString =  "<input type='range' min='0' max='"+chips+"' value='"+amtToCheckOrCall+"' class='slider' id='myRange' onChange='onChangeSlider(this, "+chips+", "+amtToCheckOrCall+")'><br>";
 		htmlString += "<input class='button' type='button' id = 'actionButton' value = '"+defaultAction+"' onClick='callMakePlay()' />";
 		
 		makePlayInterval = setTimeout(callMakePlay, 20000);// play default automatically after 20 seconds
+		//setTimeout(doCountDown(20), 1000);
 		return htmlString;
  	}	
+	
 
 	function onChangeSlider(slider, playerChips, amtToCheckOrCall){
 		betting = slider.value;
@@ -465,7 +467,6 @@
 		infoTxtDiv.innerHTML = text + "<br>" + new Date();
 	}
 		
-	/// probably delete this 
 	function clearStuff(){
 		localStorage.clear();
 		document.getElementById("playerId").value = "";
