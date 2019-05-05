@@ -156,7 +156,8 @@
 	}		
 	
 	function callMakePlay() {
-		clearInterval(makePlayInterval)
+		clearInterval(makePlayInterval);
+		clearInterval(interval); 
 		playerId = document.getElementById("playerId").value;
 		tableId = document.getElementById("tableId").value;
 		tableStatusId = document.getElementById("statusId").value;
@@ -173,6 +174,7 @@
 		document.getElementById("actionAmount").value = '';
 		document.getElementById("playerAction").value = '';
 		startCheckingForUpdates();
+		disableActionButtons(true);
 		callAPI('makePlay', processCheckUpdateReply, params);
 	}	
 	
@@ -186,11 +188,13 @@
 		document.getElementById("tableId").value = table.tableId;
 		document.getElementById("statusId").value = table.statusId;
  		thisPlayerId  = document.getElementById("playerId").value;
-//   		localStorage.setItem('pokerTableId', table.tableId);
-//   		localStorage.setItem('pokerTableStatusId', table.statusId);
+ 		/// --- comment out for app - for testing only ---
+//    		localStorage.setItem('pokerTableId', table.tableId);
+//    		localStorage.setItem('pokerTableStatusId', table.statusId);
+		/// --- comment out for app - for testing only ---
 
- 		buildPlayers(table);
-  		buildTable(table)
+		buildTable(table);
+		buildPlayers(table);
 	}
 
 	function buildPlayers(table){
@@ -275,7 +279,7 @@
  			})
  		}
 		playerDiv.classList.add('showDiv');
-
+		
  		if (currentPlayer && !hasWinner){
 			htmlString+=requestPlayerInput(player, table, player.turn, amtToCheckOrCall);
 		} 		
@@ -283,7 +287,12 @@
 		playerDiv.innerHTML = htmlString
 		
 		if (hasWinner){
+			disableActionButtons(true);
 			pauseCheckingForUpdates(10);
+		}
+		
+		if (theDiv === "player1" || theDiv === "player4"){
+			centerDiv(playerDiv);
 		}
 	}
 	
@@ -298,15 +307,22 @@
    				cardsHTML += "<span style='"+cardStyle+"display: inline-block;float:right;'></span>";
   			})
 		}
-       	
+  		cardsHTML += "<p>&nbsp;</p>"
        	cardsHTML += "<h4>POT: "+ table.pot+ " chips</h4>"
        	cardsHTML += "<h4>BET: "+ table.currentBet+ " chips</h4>"
+       	document.getElementById("currentTableBet").value = table.currentBet;
         tableInfoDiv.innerHTML = cardsHTML;
        	var newDivWidth = tableInfoDiv.clientWidth;
      	tableInfoDiv.style.left =  "calc(50% - "+(.5*newDivWidth)+"px)";
      }
     
 	function initPage() {
+		var betDiv = document.getElementById("betDiv");
+		centerDiv(betDiv)
+		var divHeight = betDiv.offsetHeight;
+		document.getElementById("player1").style.bottom = divHeight+"px";
+		disableActionButtons(true);
+
 		playerId = null;
 		try{
 			playerId = localStorage.getItem('pokerPlayerId');
@@ -314,6 +330,7 @@
 			console.log(err.message);
 		}
 		
+		/// --- comment out for app - for testing only ---
 // 		tableId = localStorage.getItem('pokerTableId');
 // 		tableStatusId = localStorage.getItem('pokerTableStatusId');		
 // 		if (tableId != null && playerId != null && statusId != null){
@@ -324,6 +341,7 @@
 // 			startCheckingForUpdates();
 // 			return;
 // 		}
+		/// --- comment out for app - for testing only ---
 
 		if (playerId == null) {
 			meetPlayer();
@@ -355,32 +373,70 @@
 	
 	var makePlayInterval;
 	function requestPlayerInput(player, table, isTurn, amtToCheckOrCall){
-		
+		clearInterval(interval); 
 		if (!isTurn){
+			disableActionButtons(true);
 			return "";
 		}
+		disableActionButtons(false);
+		document.getElementById("subtractButton").disabled = true;
 		
 		defaultAction = "CALL";
 		if (amtToCheckOrCall < 1){
 			amtToCheckOrCall = 0;
 			defaultAction="CHECK";
 		}
+		document.getElementById("defaultButton").value = defaultAction;
 		
 		stopCheckingForUpdates();
 		document.getElementById("actionAmount").value = amtToCheckOrCall;
 		document.getElementById("playerAction").value = defaultAction;
-		
-		htmlString =  "<input type='range' min='0' max='"+chips+"' value='"+amtToCheckOrCall+"' class='slider' id='myRange' onChange='onChangeSlider(this, "+chips+", "+amtToCheckOrCall+")'><br>";
-		htmlString += "<input class='button' type='button' id = 'actionButton' value = '"+defaultAction+"' onClick='callMakePlay()' />";
-		
+		document.getElementById("playerChips").value = player.chips;
+		document.getElementById("currentPlayerBet").value = player.currentBet;
+
 		makePlayInterval = setTimeout(callMakePlay, 20000);// play default automatically after 20 seconds
-		//setTimeout(doCountDown(20), 1000);
-		return htmlString;
+		var tableInfoDiv = document.getElementById("tableInfo");
+		var theHTML = tableInfoDiv.innerHTML;
+		theHTML +="<h4 id='playerTime' style='visibility:visible'>AUTO PLAY: 20</h4>";
+		tableInfoDiv.innerHTML = theHTML;
+		doCountDown(20);
+
+		return "";
  	}	
 	
+	var interval;
+	function doCountDown(seconds_left){
+		interval = setInterval(function() {
+		    document.getElementById('playerTime').innerHTML = "AUTO PLAY: " + --seconds_left;
+		    if (seconds_left <= 0) { 
+		    	clearInterval(interval); 
+		    }
+		}, 1000);
+	}
+	
+	function doBet(amount){
+		document.getElementById("subtractButton").disabled = true;
+		amount = parseInt(amount, 10);
+		
+		currentTableBet = document.getElementById("currentTableBet").value;
+		currentTableBet = parseInt(currentTableBet, 10);
+		
+		currentPlayerBet = document.getElementById("currentPlayerBet").value;
+		currentPlayerBet = parseInt(currentPlayerBet, 10);
+		
+		amtToCheckOrCall = currentTableBet - currentPlayerBet;
+		
+		betting = document.getElementById("actionAmount").value;
+		betting = parseInt(betting, 10);
+		betting = betting + amount;
+		
+		if (betting > amtToCheckOrCall){
+			document.getElementById("subtractButton").disabled = false;
+		}
+		
+		document.getElementById("actionAmount").value = betting;
 
-	function onChangeSlider(slider, playerChips, amtToCheckOrCall){
-		betting = slider.value;
+		playerChips = document.getElementById("playerChips").value;
 		htmlString = "<b>" + playerChips + "</b> chips, bet <b>" + betting + "</b> chips";
 		if (amtToCheckOrCall > 0){
 			htmlString += ", <b>" + amtToCheckOrCall + "</b> to call.";
@@ -390,39 +446,38 @@
 		
 		betElem = document.getElementById("playerBet");
 		betElem.innerHTML = htmlString;
-		
-		
-		defaultAction = "CALL";
+
+		defaultAction = "CALL"+ "\u00A0";
 		if (amtToCheckOrCall == 0){
 			defaultAction = "CHECK";
 		}
 		theAction = defaultAction;
-		theButton = betElem = document.getElementById("actionButton");
-		if (betting < amtToCheckOrCall){
-			theAction = "FOLD";
-			slider.value = 0;
-		} else if (betting > amtToCheckOrCall){
-			theAction = "BET";
+		theButton = betElem = document.getElementById("defaultButton");
+	    if (betting > amtToCheckOrCall){
+			theAction = "\u00A0\u00A0\u00A0"+"BET" + "\u00A0\u00A0";
 		} else {
 			theAction = defaultAction;
 		}
 		theButton.value=theAction;
+		
 		document.getElementById("actionAmount").value = betting;
 		document.getElementById("playerAction").value = theAction;
 	}
 	
-	function setActionAndCall(){
-		callMakePlay();
-		clearRegisterDiv();
+	function disableActionButtons(enable){
+		document.getElementById("foldButton").disabled = enable;
+		document.getElementById("defaultButton").disabled = enable;
+		document.getElementById("subtractButton").disabled = enable;
+		document.getElementById("addButton").disabled = enable;
 	}
-	
+
 	function focusOnElement(theElementId){
 		e = document.getElementById(theElementId);
 		if (e){
 			e.focus();
 		}
-    }
-	
+	}
+
 	function clearRegisterDiv(){
 		var registerDiv = document.getElementById("register");
 		registerDiv.classList.remove('showDiv');
@@ -438,10 +493,14 @@
 	}
 	
 	function rePositionDiv(theDiv) {
-		var newDivWidth = theDiv.clientWidth;
 		var newDivHeight = theDiv.clientHeight;
-		theDiv.style.left = "calc(50% - " + (.5 * newDivWidth) + "px)";
 		theDiv.style.top = "calc(50% - " + (.5 * newDivHeight) + "px)";
+		centerDiv(theDiv);
+	}
+	
+	function centerDiv(theDiv){
+		var newDivWidth = theDiv.clientWidth;	
+		theDiv.style.left = "calc(50% - " + (.5 * newDivWidth) + "px)";
 	}
 	
 	function isEmpty(str) {
@@ -482,7 +541,6 @@
     <form>
     <div id = "register" class = "topcenter"></div>
 
-
     <div id = "player1" class="bottomcenter"></div>
     <div id = "player2" class="lowerLeft"></div>
     <div id = "player3" class="upperLeft"></div>
@@ -490,9 +548,14 @@
     <div id = "player5" class="upperRight"></div>
     <div id = "player6" class="lowerRight"></div>
     <div id = "tableInfo" class = "center"></div>
-    
+    <div id = "betDiv" class = "betDiv">
+        <input class='button' type='button' id = 'foldButton' value = 'FOLD' onClick='callMakePlay()'/>
+        <input class='button' type='button' id = 'defaultButton' value = 'CHECK' onClick='callMakePlay()'/>
+        <input class='button' type='button' id = 'subtractButton' value = '&nbsp&nbsp - &nbsp&nbsp' onClick='doBet(-1)'/>
+        <input class='button' type='button' id = 'addButton' value = '&nbsp&nbsp + &nbsp&nbsp' onClick='doBet(1)'/>
+    </div>
 
-    <span style="visibility:hidden; witdth:100%;  z-index:-100; opacity: 0.2; filter: alpha(opacity=20);border:solid;">
+    <span style="visibility:hidden; witdth:100%;  z-index:-100; opacity: 0.5; filter: alpha(opacity=50);border:solid;">
         Player ID: <input type="text"  size = '40' id="playerId" name="playerId">
         Player Name: <input type="text" size = '40'  id="thePlayerName" name="thePlayerName">    
         Table ID: <input type="text" size = '40'  id="tableId" name="tableId">
@@ -501,8 +564,7 @@
         Current Player bet: <input type="text" id="currentPlayerBet" name="currentPlayerBet">
         Player Action: <input type="text" id="playerAction" name="playerAction">
         Player Action Amount: <input type="text" id="actionAmount" name="actionAmount">
-        <input type = "button" onClick = "clearStuff()" value="CLEAR STUFF"/>
-        <input type = "button" onClick = "stopCheckingForUpdates()" value="STOP CHECKING FOR UPDATES"/>
+        Player Chips: <input type="text" id="playerChips" name="playerChips>
     </span>
     <div style = "visibility:hidden;" id = "infoText">    
     </form>
