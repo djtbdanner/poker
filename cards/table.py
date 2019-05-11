@@ -10,7 +10,7 @@ logger = logging.getLogger()
 class Table:
     TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
     # will remove player if he or she hasn't played in time limit
-    PLAYER_TURN_LIMIT=300
+    PLAYER_TURN_LIMIT=30
     def __init__(self, players=None, deck = None, pot = 0,  cards=None, tableId=None, blind = 2, currentBet = 0, statusId=None, winners=None, updateTs=None):
         self.players =  players if players is not None else []
         if deck is not None:
@@ -194,7 +194,8 @@ class Table:
     def addPlayer(self, player):
         for existingPlayer in self.players:
             if existingPlayer.playerId == player.playerId:
-                raise ValueError(" Cannot add player to table as player is already at table.")    
+                #raise ValueError(" Cannot add player to table as player is already at table.")  
+                return  
         if self.isPlayActive():
             player.folded = True
         self.players.append(player)
@@ -216,6 +217,8 @@ class Table:
             if len(self.cards) == 5:
                 return True
             if self.haveAllButOnePlayerFolded():
+                return True
+            if len(self.players()) <= 1:
                 return True
         return False
 

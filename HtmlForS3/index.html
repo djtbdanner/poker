@@ -100,6 +100,7 @@
 	
 	function processFindTableReply(http) {
 		if (checkForErrors(http.responseText)){
+			stopCheckingForUpdates();
 			return;
 		}
 		var o = JSON.parse(http.responseText);
@@ -147,10 +148,12 @@
 	}
 	
 	function processCheckUpdateReply(http) {
-		if (checkForErrors(http.responseText)){
+		responseText = http.responseText;
+		if (checkForErrors(responseText)){
+			stopCheckingForUpdates();
 			return;
 		}
-		var o = JSON.parse(http.responseText);
+		var o = JSON.parse(responseText);
 		var table = JSON.parse(o.body);
 		processTable(table)
 	}		
@@ -235,7 +238,7 @@
 		htmlString += "<p id = 'playerBet'><b>" +chips + "</b> chips, bet <b>" + player.currentBet + "</b> chips";
 		
 		if (amtToCheckOrCall > 0){
-			htmlString += ", <b>" + amtToCheckOrCall + "</b> to call.</p>";
+			htmlString += ", </br><b>" + amtToCheckOrCall + "</b> to call.</p>";
 		} else {
 			htmlString += ".</p>";
 		}
@@ -387,7 +390,6 @@
 			defaultAction="CHECK";
 		}
 		document.getElementById("defaultButton").value = defaultAction;
-		
 		stopCheckingForUpdates();
 		document.getElementById("actionAmount").value = amtToCheckOrCall;
 		document.getElementById("playerAction").value = defaultAction;
@@ -412,6 +414,12 @@
 		    	clearInterval(interval); 
 		    }
 		}, 1000);
+	}
+	
+	function fold(){
+		document.getElementById("actionAmount").value = 0;
+		document.getElementById("playerAction").value = "FOLD";
+		callMakePlay();
 	}
 	
 	function doBet(amount){
@@ -439,7 +447,7 @@
 		playerChips = document.getElementById("playerChips").value;
 		htmlString = "<b>" + playerChips + "</b> chips, bet <b>" + betting + "</b> chips";
 		if (amtToCheckOrCall > 0){
-			htmlString += ", <b>" + amtToCheckOrCall + "</b> to call.";
+			htmlString += ",</br> <b>" + amtToCheckOrCall + "</b> to call.";
 		} else {
 			htmlString += ".";
 		}
@@ -465,6 +473,8 @@
 	}
 	
 	function disableActionButtons(enable){
+		betDiv = document.getElementById("betDiv");
+		betDiv.style.visibility="visible";
 		document.getElementById("foldButton").disabled = enable;
 		document.getElementById("defaultButton").disabled = enable;
 		document.getElementById("subtractButton").disabled = enable;
@@ -508,12 +518,36 @@
 	}
 
 	function checkForErrors(infoTxt){
+// 		alert(infoTxt)
+		if (infoTxt === undefined || infoTxt == null){
+			alert("Unfortunately there were errors in processing.");
+			showInfoTxt("no data returned", "red");
+			return true;
+		}
 		if (infoTxt.includes("errorMessage")){
 			alert("Unfortunately there were errors in processing.");
 			stopCheckingForUpdates();
 			showInfoTxt(infoTxt, "red");
 			return true;
 		}
+		
+		var o = JSON.parse(infoTxt);
+		if (o === undefined){
+			alert("Unfortunately there were errors in processing.");
+			showInfoTxt("unable to parse response", "red");
+		}
+		var statusCode = o.statusCode;
+		if (statusCode != 200){
+			alert("Unfortunately there were errors in processing.");
+			var body = o.body;
+			var s = "invalid status code: " + statusCode
+			if (body != undefined){
+				s = s+"\n"+body;
+			}
+			showInfoTxt(s, "red");
+			return true;
+		}
+		
 		return false;
 	}
 	
@@ -548,13 +582,14 @@
     <div id = "player5" class="upperRight"></div>
     <div id = "player6" class="lowerRight"></div>
     <div id = "tableInfo" class = "center"></div>
-    <div id = "betDiv" class = "betDiv">
-        <input class='button' type='button' id = 'foldButton' value = 'FOLD' onClick='callMakePlay()'/>
+    <div id = "betDiv" class = "betDiv" style = "visibility:hidden;">
+        <input class='button' type='button' id = 'foldButton' value = 'FOLD' onClick='fold()'/>
         <input class='button' type='button' id = 'defaultButton' value = 'CHECK' onClick='callMakePlay()'/>
         <input class='button' type='button' id = 'subtractButton' value = '&nbsp&nbsp - &nbsp&nbsp' onClick='doBet(-1)'/>
         <input class='button' type='button' id = 'addButton' value = '&nbsp&nbsp + &nbsp&nbsp' onClick='doBet(1)'/>
     </div>
-
+    <div style = "visibility:hidden;" id = "infoText"></div> 
+     
     <span style="visibility:hidden; witdth:100%;  z-index:-100; opacity: 0.5; filter: alpha(opacity=50);border:solid;">
         Player ID: <input type="text"  size = '40' id="playerId" name="playerId">
         Player Name: <input type="text" size = '40'  id="thePlayerName" name="thePlayerName">    
@@ -564,9 +599,10 @@
         Current Player bet: <input type="text" id="currentPlayerBet" name="currentPlayerBet">
         Player Action: <input type="text" id="playerAction" name="playerAction">
         Player Action Amount: <input type="text" id="actionAmount" name="actionAmount">
-        Player Chips: <input type="text" id="playerChips" name="playerChips>
+        Player Chips: <input type="text" id="playerChips" name="playerChips">
     </span>
-    <div style = "visibility:hidden;" id = "infoText">    
+    
+
     </form>
 </body>
 <script>

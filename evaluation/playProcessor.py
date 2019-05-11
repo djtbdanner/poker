@@ -1,6 +1,7 @@
 import evaluation.processor as processor
 import db.datalayer as datalayer
 import logging
+from player import PlayerAction
 from datetime import datetime
 from datetime import timedelta
 logger = logging.getLogger()
@@ -61,14 +62,33 @@ def checkForAndRemoveMissingPlayers(table):
         if player.turn:
             startTime = datetime.strptime(player.turnStartTime, table.TIME_FORMAT)
             timeLimit = startTime + timedelta(seconds=table.PLAYER_TURN_LIMIT)
+            logger.info("checking player " + player.name + " start time " + str(startTime) + " time limit " + str(timeLimit))
             now = datetime.now()
             if now > timeLimit:
                 logger.info("player removed from table after timeout")
                 table.removePlayer(player)
+            else:
+                logger.info("player kept")
 
 def checkForUpdates(table, player, currentStatus):
     
     checkForAndRemoveMissingPlayers(table)
+    
+    if len(table.players) == 1:
+        logger.info("only one player at table")
+        for player in table.players:
+            player.currentBet = 0
+            player.currentAction = PlayerAction.NONE
+            player.hand.cards = []
+            player.folded = False
+            player.dealer = False
+            player.isInformedHandComplete = False
+            if table.pot > 0:
+                player.chips + table.pot
+                table.pot = 0
+                table.currentBet = 0
+            table.winners = []
+            table.cards =[]
     
     if len(table.players) > 1:
         if not table.hasDealer():

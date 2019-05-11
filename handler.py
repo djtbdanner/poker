@@ -21,7 +21,7 @@ def createOrFindPlayer(event, context):
         body = json.dumps(player,default=jsob.convert_to_dict,indent=4, sort_keys=True)
  
     except Exception as error:
-        logger.exception("Unable to find or create player." + error)
+        logger.exception("Unable to find or create player." + str(error))
         status = 500
         body = str(error)
  
@@ -41,7 +41,7 @@ def findTable(event, context):
         body = json.dumps(table,default=jsob.convert_to_dict,indent=4, sort_keys=True)
 
     except Exception as error:
-        logger.exception("Unable to find or create table.", error)
+        logger.exception("Unable to find or create table." + str(error))
         status = 500
         body = str(error)
 
@@ -69,7 +69,7 @@ def makePlay(event, context):
             body = buildTableResult(table)
 
     except Exception as error:
-        logger.exception("Unable to make play." )
+        logger.exception("Unable to make play." + str(error))
         status = 500
         body = str(error)
 
@@ -85,12 +85,16 @@ def checkForUpdates(event, context):
         table =  datalayer.getOrCreateSavedTable(tableId)
         logger.info("retrieved table: " + table.tableId)
         player = table.findPlayerById(playerId)
-        logger.info("retrieved player from table: " + player.playerId)
+        if player is None:
+            logger.info("Player not on table raising error... " )
+            raise Exception("Player not found at table.")
+        else:
+            logger.info("retrieved player from table: " + player.playerId)
         table = playProcessor.checkForUpdates(table, player, tableStatusId)
         status = 200
         body = buildTableResult(table)
     except Exception as error:
-        logger.exception("Unable to check for updates.", error)
+        logger.exception("Unable to check for updates." + str(error))
         status = 500
         body = str(error)
 
@@ -112,7 +116,7 @@ def removePlayer(event, context):
         status = 200
         body = buildTableResult(table)
     except Exception as error:
-        logger.exception("Unable to remove player.", error)
+        logger.exception("Unable to remove player." + str(error))
         status = 500
         body = str(error)
 
