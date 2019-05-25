@@ -52,7 +52,7 @@ class Table:
         Set the position of the dealer. Player that is dealer will be in index 0 of the array of players.
         '''
         self.players[playerIndxForDealer].dealer = True
-#         logger.info(' {0} is dealer.'.format( self.players[playerIndxForDealer].name))
+        logger.info(' {0} is dealer.'.format( self.players[playerIndxForDealer].name))
 
         resetPlayers = []
         ### set dealer to index 0
@@ -63,7 +63,7 @@ class Table:
             player = self.players[nextPlayer]
             player.dealer = playerIndxForDealer==nextPlayer
             resetPlayers.append(player)
-#             logger.info('player ' + self.players[nextPlayer].name + ' is position ' + str(index))
+            logger.info('player ' + self.players[nextPlayer].name + ' is position ' + str(index))
         self.players = resetPlayers
         self.setBlinds()
         self.statusId=self.statusId+1
@@ -71,10 +71,10 @@ class Table:
     def dealPlayer(self, playerIndex):
         player = self.players[playerIndex]
         if len(player.hand.cards) >= 2:
-#             logger.warn(' dealPlayer called for player {0}, id {1}, the request was ignored because player has 2 or more cards'.format(player.name, player.playerId))
+            logger.warn(' dealPlayer called for player {0}, id {1}, the request was ignored because player has 2 or more cards'.format(player.name, player.playerId))
             return
         card = self.deck.deal()
-#         logger.info(' {0} received a {1}'.format(player.name, card))
+        logger.info(' {0} received a {1}'.format(player.name, card))
         player.hand.cards.append(card)
         self.statusId=self.statusId+1
 
@@ -82,19 +82,19 @@ class Table:
         for _ in range(cardCount):
             card = self.deck.deal()
             self.cards.append(card)
-#             logger.info(' Table received a {0}'.format(card))
-#             logger.info(' Table cards: {0}'.format(self.showHand()))
+            logger.info(' Table received a {0}'.format(card))
+            logger.info(' Table cards: {0}'.format(self.showHand()))
         self.statusId=self.statusId+1
 
     def playerBetOrCall(self, player, chips):
-#         logger.info('in bet or call recalling...' + str(player)  + " " + str(chips) + " " + str(len(self.players)))
+        logger.info('in bet or call recalling...' + str(player)  + " " + str(chips) + " " + str(len(self.players)))
         self.playerBetOrCallByIndex(self.players.index(player), chips)
 
     def playerBetOrCallByIndex(self, playerIndex, chips):
         logger.info('in bet or call')
         player = self.players[playerIndex]
         player.currentBet =  player.currentBet + chips
-#         logger.info(' {0} bets {1} chip(s), for a total of {2} this round'.format(player.name, chips, player.currentBet))
+        logger.info(' {0} bets {1} chip(s), for a total of {2} this round'.format(player.name, chips, player.currentBet))
         if player.folded:
             logger.warn("Player asked to bet or call, but is folded, bet will not be made")
             return
@@ -103,7 +103,7 @@ class Table:
         player.currentAction = PlayerAction.CALL_CHECK_RAISE
         self.pot = self.pot + chips
         self.currentBet = player.currentBet
-#         logger.info(' Sets table pot to {0} and current call amount for this round to {1}'.format(self.pot,self.currentBet))
+        logger.info(' Sets table pot to {0} and current call amount for this round to {1}'.format(self.pot,self.currentBet))
         self.setNextPlayerTurn(player)
         logger.info('in bet or call done')
         self.statusId=self.statusId+1
@@ -113,18 +113,18 @@ class Table:
         
     def playerCheckByIndex(self, playerIndex):
         player = self.players[playerIndex]
-#         logger.info(' {0} checks'.format(player.name))
+        logger.info(' {0} checks'.format(player.name))
         if player.currentBet < self.currentBet:
             raise ValueError ('Cannot check without meeting the current bet')
         if player.folded:
-#             logger.warn(player.name + " asked to check, but is folded, bet will not be made")
+            logger.warn(player.name + " asked to check, but is folded, bet will not be made")
             return
         player.currentAction = PlayerAction.CALL_CHECK_RAISE
         self.setNextPlayerTurn(player)
         self.statusId=self.statusId+1
  
     def setNextPlayerTurn(self, player):
-#         logger.info("Setting turn for player after {0}".format(player.name))
+        logger.info("Setting turn for player after {0}".format(player.name))
         for p in self.players:
             p.turn = False
             p.turnStartTime = None
@@ -138,7 +138,7 @@ class Table:
                 nextPlayerIndex = self.getNextPlayerIndex(nextPlayerIndex)
             self.players[nextPlayerIndex].turn = True
             self.players[nextPlayerIndex].turnStartTime = datetime.now().strftime(self.TIME_FORMAT)
-#             logger.info("Setting {0}'s turn".format(self.players[nextPlayerIndex].name))
+            logger.info("Setting {0}'s turn".format(self.players[nextPlayerIndex].name))
     
     def getNextPlayerIndex(self, playerIndex):
         playerIndex = playerIndex + 1
@@ -152,7 +152,7 @@ class Table:
     def playerFoldByIndex(self, playerIndex):
         player = self.players[playerIndex]
         player.folded = True
-#         logger.info(' {0} folds, player has a total of {1} chips bet this round'.format(player.name, player.currentBet))
+        logger.info(' {0} folds, player has a total of {1} chips bet this round'.format(player.name, player.currentBet))
         self.setNextPlayerTurn(player)
         self.statusId=self.statusId+1
 
@@ -254,7 +254,7 @@ class Table:
         self.players[firstBlindIndex].currentAction = PlayerAction.NONE
         self.players[secondBlindIndex].currentAction = PlayerAction.NONE
         self.setNextPlayerTurn( self.players[secondBlindIndex])
-#         logger.info(' Blinds set, {0} is low at {1} chip(s) and {2} high with {3} chips '.format( self.players[firstBlindIndex].name, int(self.blind/2), self.players[secondBlindIndex].name, self.blind))
+        logger.info(' Blinds set, {0} is low at {1} chip(s) and {2} high with {3} chips '.format( self.players[firstBlindIndex].name, int(self.blind/2), self.players[secondBlindIndex].name, self.blind))
 
     def dealRound(self):
         numberOfPlayers = len(self.players)

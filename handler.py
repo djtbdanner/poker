@@ -59,14 +59,14 @@ def makePlay(event, context):
         logger.info("retrieved table: " + table.tableId)
         player = table.findPlayerById(playerId)
         logger.info("retrieved player from table: " + player.playerId)
-        if table.statusId != int(tableStatusId):
-            status = 500
-            body = {"message": "Play is out of turn."}
-            raise  ValueError ("Play is out of turn.")
-        else:
-            table = playProcessor.makePlay(player, table, playerAction, actionAmount, tableStatusId)
-            status = 200
-            body = buildTableResult(table)
+#         if table.statusId != int(tableStatusId):
+#             status = 500
+#             body = {"message": "Play is out of turn."}
+#             raise  ValueError ("Play is out of turn.")
+#         else:
+        table = playProcessor.makePlay(player, table, playerAction, actionAmount, tableStatusId)
+        status = 200
+        body = buildTableResult(table)
 
     except Exception as error:
         logger.exception("Unable to make play." + str(error))

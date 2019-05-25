@@ -203,6 +203,7 @@
 	function buildPlayers(table){
 		var player1Index;
 		numberOfPlayers =  table.players.length;
+		hideMissingPlayerDivs(numberOfPlayers)
 		
 		table.players.forEach(function(player, index) {
 			if (player.playerId == thisPlayerId){
@@ -233,6 +234,7 @@
 		playerDiv = document.getElementById(theDiv);
 		playerDiv.style.width = "auto";
 		playerDiv.style.height = "auto";
+		playerDiv.style.visibility = "visible";
 		htmlString = "<h2>" + player.name + "</h2>";
 		
 		htmlString += "<p id = 'playerBet'><b>" +chips + "</b> chips, bet <b>" + player.currentBet + "</b> chips";
@@ -567,6 +569,13 @@
 		document.getElementById("statusId").value = "";
 		document.getElementById("thePlayerName").value = "";
 		stopCheckingForUpdates();
+	}
+	
+	function hideMissingPlayerDivs(playerCount){
+		var count = playerCount+1;
+		for (count; count < 7; count++) {
+			document.getElementById("player"+count).style.visibility = 'hidden'; 
+		}
 	}
 </script>
 </head>
