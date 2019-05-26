@@ -87,7 +87,7 @@ class Table:
         self.statusId=self.statusId+1
 
     def playerBetOrCall(self, player, chips):
-        logger.info('in bet or call recalling...' + str(player)  + " " + str(chips) + " " + str(len(self.players)))
+        logger.info('in bet or call recalling...' + str(player)  + " " + str(chips) + " ")
         self.playerBetOrCallByIndex(self.players.index(player), chips)
 
     def playerBetOrCallByIndex(self, playerIndex, chips):

@@ -164,8 +164,8 @@ def findATableForPlayer(player):
             for i in response['Items']:
                 tableTry = json.loads(i["pokerTable"], object_hook=jsob.dict_to_obj)
                 logger.info("Found a table for player :" + str(tableTry))
-                if (len(tableTry.players) < 7):
-                    logger.info("Table has less than 7 players :" + str(tableTry))
+                if (len(tableTry.players) < 6):
+                    logger.info("Table has less than 6 players :" + str(tableTry))
                     table = tableTry
                     foundATable = True
                     break

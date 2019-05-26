@@ -9,7 +9,6 @@
     var url = 'https://fvl7shd96d.execute-api.us-east-1.amazonaws.com/dev/';
     var cardMap = new Map();
     function buildCardMap(){
-        var test = document.getElementById("test");
     	var cardRowHeights = ["-7px", "-121px", "-236px", "-350px"];
     	var cardRowWidths = ["-7px", "-85px", "-163px", "-242px", "-320px", "-398px", "-476px", "-555px", "-633px", "-711px", "-790px", "-868px", "-946px"];
     	
@@ -226,6 +225,10 @@
 	
 	function buildPlayerDiv(theDiv, player, currentPlayer, table){
 		
+		if (currentPlayer){
+			document.title = "Poker - " + player.name;
+		}
+		
 		playerBet = player.currentBet;
 		tableBet = table.currentBet;
 		chips = player.chips;
@@ -235,6 +238,7 @@
 		playerDiv.style.width = "auto";
 		playerDiv.style.height = "auto";
 		playerDiv.style.visibility = "visible";
+		playerDiv.style.zIndex  = "5";
 		htmlString = "<h2>" + player.name + "</h2>";
 		
 		htmlString += "<p id = 'playerBet'><b>" +chips + "</b> chips, bet <b>" + player.currentBet + "</b> chips";
@@ -296,7 +300,7 @@
 			pauseCheckingForUpdates(10);
 		}
 		
-		if (theDiv === "player1" || theDiv === "player4"){
+		if (theDiv === "player1"){
 			centerDiv(playerDiv);
 		}
 	}
@@ -573,9 +577,17 @@
 	
 	function hideMissingPlayerDivs(playerCount){
 		var count = playerCount+1;
-		for (count; count < 7; count++) {
+		for (count; count < 6; count++) {
 			document.getElementById("player"+count).style.visibility = 'hidden'; 
 		}
+	}
+	
+	function increaseZIindex(div){
+		if (div === undefined){
+			return;
+		}
+		
+		div.style.zIndex = div.style.zIndex + 1;
 	}
 </script>
 </head>
@@ -584,12 +596,11 @@
     <form>
     <div id = "register" class = "topcenter"></div>
 
-    <div id = "player1" class="bottomcenter"></div>
-    <div id = "player2" class="lowerLeft"></div>
-    <div id = "player3" class="upperLeft"></div>
-    <div id = "player4" class="topcenter"></div>
-    <div id = "player5" class="upperRight"></div>
-    <div id = "player6" class="lowerRight"></div>
+    <div id = "player1" class="bottomcenter" onClick='increaseZIindex(this)'></div>
+    <div id = "player2" class="lowerLeft" onClick='increaseZIindex(this)'></div>
+    <div id = "player3" class="upperLeft" onClick='increaseZIindex(this)'></div>
+    <div id = "player4" class="upperRight" onClick='increaseZIindex(this)'></div>
+    <div id = "player5" class="lowerRight" onClick='increaseZIindex(this)'></div>
     <div id = "tableInfo" class = "center"></div>
     <div id = "betDiv" class = "betDiv" style = "visibility:hidden;">
         <input class='button' type='button' id = 'foldButton' value = 'FOLD' onClick='fold()'/>
@@ -610,8 +621,6 @@
         Player Action Amount: <input type="text" id="actionAmount" name="actionAmount">
         Player Chips: <input type="text" id="playerChips" name="playerChips">
     </span>
-    
-
     </form>
 </body>
 <script>

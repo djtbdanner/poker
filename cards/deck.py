@@ -42,7 +42,7 @@ class Deck:
         deck_comp = ''  # start with an empty string
         for card in self.cards:
             deck_comp += '\n '+card.__str__() # add each Card object's print string
-        return 'The deck has:' + deck_comp + '\n' + str(len(self.cards)) + ' cards left in deck'
+        return 'The deck has:' + deck_comp + '\n' + str[len(self.cards)] + ' cards left in deck'
 
     def shuffle(self):
         random.shuffle(self.cards)

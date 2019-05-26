@@ -67,6 +67,7 @@ def checkForAndRemoveMissingPlayers(table):
             if now > timeLimit:
                 logger.info("player removed from table after timeout")
                 table.removePlayer(player)
+                datalayer.updateTable(table)
             else:
                 logger.info("player kept")
 
@@ -89,12 +90,16 @@ def checkForUpdates(table, player, currentStatus):
                 table.currentBet = 0
             table.winners = []
             table.cards =[]
+            datalayer.updateTable(table)
     
     if len(table.players) > 1:
         if not table.hasDealer():
             table.setDealerAtRandom()
+            datalayer.updateTable(table)
         while not table.doAllPlayersHaveTwoCards():
             table.dealRound()
+            datalayer.updateTable(table)
+        
             
         logger.info("check to see if hand is complete") 
         if table.isHandComplete():
@@ -105,6 +110,5 @@ def checkForUpdates(table, player, currentStatus):
                     table.dealRound()
             logger.info("hand is complete, now adding player to list that knows it is complete")
             player.isInformedHandComplete = True
-
-    datalayer.updateTable(table)
+            datalayer.updateTable(table)
     return table
