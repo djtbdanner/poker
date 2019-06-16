@@ -4,4 +4,4 @@ Poker game for browsers.
 
 Backend  - python running on AWS Lambda
 
-Frontend - straigh HTML/CSS/JavaScript
+Frontend - plain old HTML/CSS/JavaScript
